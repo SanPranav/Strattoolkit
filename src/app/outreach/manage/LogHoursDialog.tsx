@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { pb } from "@/lib/pbaseClient";
 import { formatMinutes } from "@/lib/utils";
-import type { t_pb_OutreachEvent, t_pb_User } from "@/lib/types";
+import type { pb_OutreachEventsItem, pb_UserColItem } from "@/lib/types";
 
 import { Clock, Loader2, Plus, Trash2, User } from "lucide-react";
 
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 
 interface LogHoursDialogProps {
-  event: t_pb_OutreachEvent;
+  event: pb_OutreachEventsItem;
   onHoursLogged: () => void;
 }
 
@@ -41,7 +41,7 @@ export default function LogHoursDialog({
   onHoursLogged
 }: LogHoursDialogProps) {
   const [open, setOpen] = useState(false);
-  const [users, setUsers] = useState<t_pb_User[]>([]);
+  const [users, setUsers] = useState<pb_UserColItem[]>([]);
   const [fetchingUsers, setFetchingUsers] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -62,9 +62,11 @@ export default function LogHoursDialog({
   const fetchUsers = async function () {
     setFetchingUsers(true);
     try {
-      const response = await pb.collection("users").getFullList<t_pb_User>({
-        sort: "name"
-      });
+      const response = await pb
+        .collection("users")
+        .getFullList<pb_UserColItem>({
+          sort: "name"
+        });
 
       const sorted = response.toSorted((a, b) => a.name.localeCompare(b.name));
 

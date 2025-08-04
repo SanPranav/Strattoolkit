@@ -1,21 +1,21 @@
 import { redirect } from "next/navigation";
 
 import { execPocketbase } from "@/lib/pbaseServer";
-import type { t_pb_User, t_pb_UserData } from "@/lib/types";
+import type { pb_UserColItem, pb_UserDataItem } from "@/lib/types";
 
 import OutreachPage from "./OutreachPage";
 
 export default async function ServerDataFetcher() {
   const [userData, user, outreachMinutesCutoff] = await execPocketbase(
     async (pb) => {
-      const authRecord = pb.authStore.record as t_pb_User;
+      const authRecord = pb.authStore.record as pb_UserColItem;
 
-      let data: t_pb_UserData | undefined;
+      let data: pb_UserDataItem | undefined;
       let outreachMinutesCutoff = 900;
       try {
         data = await pb
           .collection("UserData")
-          .getFirstListItem<t_pb_UserData>(`user='${authRecord.id}'`, {
+          .getFirstListItem<pb_UserDataItem>(`user='${authRecord.id}'`, {
             expand: "user"
           });
         const record = await pb

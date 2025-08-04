@@ -4,7 +4,7 @@ import { formatMinutes } from "@/lib/utils";
 import { manualModifyOutreachHours } from "@/lib/db/hours";
 
 import { BaseStates } from "@/lib/states";
-import { t_pb_UserData } from "@/lib/types";
+import { pb_UserDataItem } from "@/lib/types";
 
 import { Button } from "@/components/ui/button";
 import { DialogHeader } from "@/components/ui/dialog";
@@ -22,7 +22,7 @@ export default function EditUserDialog({
   userData,
   refreshFunc
 }: {
-  userData: t_pb_UserData;
+  userData: pb_UserDataItem;
   refreshFunc?: () => void;
 }) {
   const [open, setOpen] = useState(false);

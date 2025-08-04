@@ -11,17 +11,29 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavbar } from "@/hooks/useNavbar";
 import { recordToImageUrl } from "@/lib/pbaseClient";
 import { logout } from "@/lib/auth";
-import type { t_pb_User } from "@/lib/types";
+import type { pb_UserColItem } from "@/lib/types";
 
 import {
   User,
   FileSpreadsheet,
   Clock,
   Signature,
-  Construction
+  Construction,
+  Menu,
+  SearchCode
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger
+} from "@/components/ui/drawer";
 import NavbarSkeleton from "./skeletons/NavbarSkeleton";
 import { Separator } from "@/components/ui/separator";
 
@@ -34,19 +46,10 @@ const allItems = [
     msg: "Going Home"
   },
   {
-    icon: <FileSpreadsheet className="h-5 w-5" />,
-    label: "Budget",
-    url: "/budget",
-    msg: "Going to the Budget Sheet",
-    func: () => {
-      toast(
-        <div className="flex gap-4">
-          <Construction className="size-4 text-yellow-600" />
-          <span>Under Construction</span>
-        </div>
-      );
-      return false;
-    }
+    icon: <SearchCode className="h-5 w-5" />,
+    label: "Scouting",
+    url: "/scouting",
+    msg: "Lets go scout!"
   },
   {
     icon: <Clock className="h-5 w-5" />,
@@ -76,7 +79,7 @@ const allItems = [
 export type NavItems = typeof allItems;
 
 type ChildProps = {
-  user: t_pb_User | null;
+  user: pb_UserColItem | null;
   navItems: typeof allItems;
   onNavigate: (url: { url: string; msg?: string }) => void;
   defaultToShown: boolean;
@@ -122,68 +125,119 @@ export default function Navbar({}) {
 }
 
 function Mobile({ navItems, user, onNavigate }: ChildProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleNavigation = (item: {
+    url: string;
+    msg?: string;
+    func?: () => boolean;
+  }) => {
+    setIsOpen(false);
+    onNavigate(item);
+  };
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border rounded-t-2xl shadow-2xl">
-      <div className="flex items-center justify-around px-3 py-2 transition-all duration-300 ease-in-out">
-        {navItems.map((item, index) => (
-          <Button
-            key={index}
-            variant="ghost"
-            size="sm"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground h-auto py-1.5 px-2 transition-all duration-300 ease-in-out opacity-100"
-            onClick={onNavigate.bind(null, {
-              url: item.url,
-              msg: item?.msg,
-              func: item?.func
-            })}>
-            <div className="flex items-center justify-center transition-all duration-300 ease-in-out">
-              {item.icon}
-            </div>
-            <span className="text-xs font-medium transition-all duration-300 ease-in-out">
-              {item.label}
-            </span>
-          </Button>
-        ))}
-        {user ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex flex-col items-center space-y-1 text-muted-foreground hover:text-foreground h-auto py-1.5 px-2"
-            onClick={onNavigate.bind(null, {
-              url: "/account",
-              msg: "Going to Account"
-            })}>
-            <div className="flex items-center justify-center">
-              <Avatar className="h-5 w-5">
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed top-4 left-4 z-50 h-10 w-10 rounded-lg shadow-lg bg-card/95 backdrop-blur-xl border border-border hover:bg-muted">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent className="max-h-[80vh]">
+        <DrawerHeader className="text-left">
+          <DrawerTitle hidden>Navigation</DrawerTitle>
+        </DrawerHeader>
+
+        <div className="px-4 pb-4 space-y-4">
+          {/* User Section */}
+          {user ? (
+            <div className="flex items-center space-x-3 pb-4 border-b border-border">
+              <Avatar className="h-12 w-12">
                 <AvatarImage
                   src={recordToImageUrl(user)?.toString()}
-                  alt={user.name}
+                  alt={user.name || "User"}
                   className="rounded-full"
                 />
-                <AvatarFallback className="bg-muted text-muted-foreground text-xs rounded-full flex items-center justify-center h-full w-full">
-                  {user.name.charAt(0)}
+                <AvatarFallback className="bg-muted text-muted-foreground text-base rounded-full flex items-center justify-center h-full w-full">
+                  {(user.name || "U").charAt(0)}
                 </AvatarFallback>
               </Avatar>
+              <div className="flex flex-col">
+                <span className="text-base font-medium text-foreground">
+                  {user.name || "Unknown User"}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {user.role
+                    ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+                    : "? Role ?"}
+                </span>
+              </div>
             </div>
-            <span className="text-xs font-medium">Account</span>
-          </Button>
-        ) : (
-          <Button
-            variant="default"
-            size="sm"
-            className="flex flex-col items-center space-y-1 h-auto py-1.5 px-2"
-            onClick={onNavigate.bind(null, {
-              url: "/login",
-              msg: "Going to Login"
-            })}>
-            <div className="flex items-center justify-center">
-              <User className="h-5 w-5" />
-            </div>
-            <span className="text-xs font-medium">Log In</span>
-          </Button>
-        )}
-      </div>
-    </div>
+          ) : null}
+
+          {/* Navigation Items */}
+          <div className="space-y-1">
+            {navItems.map((item, index) => (
+              <Button
+                key={index}
+                variant="ghost"
+                className="w-full justify-start text-left h-12 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                onClick={() =>
+                  handleNavigation({
+                    url: item.url,
+                    msg: item?.msg,
+                    func: item?.func
+                  })
+                }>
+                <div className="flex items-center space-x-3">
+                  {item.icon}
+                  <span className="text-sm font-medium">{item.label}</span>
+                </div>
+              </Button>
+            ))}
+
+            <Separator className="my-4" />
+
+            {/* Account/Login Button */}
+            {user ? (
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-left h-12 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                onClick={() =>
+                  handleNavigation({
+                    url: "/account",
+                    msg: "Going to Account"
+                  })
+                }>
+                <div className="flex items-center space-x-3">
+                  <User className="h-5 w-5" />
+                  <span className="text-sm font-medium">Account</span>
+                </div>
+              </Button>
+            ) : (
+              <Button
+                variant="default"
+                className="w-full justify-start text-left h-12"
+                onClick={() =>
+                  handleNavigation({
+                    url: "/auth/login",
+                    msg: "Going to Login"
+                  })
+                }>
+                <div className="flex items-center space-x-3">
+                  <User className="h-5 w-5" />
+                  <span className="text-sm font-medium">Log In</span>
+                </div>
+              </Button>
+            )}
+          </div>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 
@@ -275,20 +329,22 @@ function Desktop({ navItems, user, onNavigate, defaultToShown }: ChildProps) {
                   className="flex items-center space-x-3 text-muted-foreground hover:text-foreground transition-all duration-300 ease-in-out opacity-100 group">
                   <div className="hidden flex-col items-start md:flex">
                     <span className="text-sm font-medium text-foreground underline transition-all duration-200 ease-in-out decoration-transparent group-hover:decoration-current">
-                      {user.name}
+                      {user.name || "Unknown User"}
                     </span>
                     <span className="text-sm font-sm text-muted-foreground">
-                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                      {user.role
+                        ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+                        : "? Role ?"}
                     </span>
                   </div>
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={recordToImageUrl(user)?.toString()}
-                      alt={user.name}
+                      alt={user.name || "User"}
                       className="rounded-full"
                     />
                     <AvatarFallback className="bg-muted text-muted-foreground text-xs rounded-full flex items-center justify-center h-full w-full">
-                      {user.name.charAt(0)}
+                      {(user.name || "U").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                 </Link>

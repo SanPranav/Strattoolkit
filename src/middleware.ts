@@ -8,7 +8,8 @@ const authedOnlyRoutes = [
   "/profile",
   "/settings",
   "/outreach",
-  "/build"
+  "/build",
+  "/scouting"
 ];
 // const publicPaths = ["/auth/unauthorized", "/auth/login", "/auth/signup"];
 

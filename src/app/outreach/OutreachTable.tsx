@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { pb, recordToImageUrl } from "@/lib/pbaseClient";
-import type { t_pb_UserData } from "@/lib/types";
+import type { pb_UserDataItem } from "@/lib/types";
 import { formatMinutes, formatPbDate, getBadgeStatusStyles } from "@/lib/utils";
 
 import {
@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import EditUserDialog from "./EditUserDialog";
 
 type OutreachTableProps = {
-  allUsers: t_pb_UserData[];
+  allUsers: pb_UserDataItem[];
   isAdmin: boolean;
   isLoading: boolean;
   isLoadingMore: boolean;
@@ -78,7 +78,7 @@ export function OutreachTable({
   });
 
   useEffect(() => {
-    const sortUsers = (users: t_pb_UserData[], config: typeof sortConfig) => {
+    const sortUsers = (users: pb_UserDataItem[], config: typeof sortConfig) => {
       return [...users].sort((a, b) => {
         let aValue, bValue;
 

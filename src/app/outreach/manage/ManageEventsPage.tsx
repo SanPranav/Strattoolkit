@@ -7,7 +7,10 @@ import { pb } from "@/lib/pbaseClient";
 import { useNavbar } from "@/hooks/useNavbar";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { t_pb_OutreachEvent, t_pb_OutreachSession } from "@/lib/types";
+import type {
+  pb_OutreachEventsItem,
+  pb_OutreachSessionsItem
+} from "@/lib/types";
 
 import { Calendar } from "lucide-react";
 import Loader from "@/components/Loader";
@@ -20,9 +23,8 @@ export default function ManageEventsPage() {
   const isHydrated = useIsHydrated();
   const isMobile = useIsMobile();
 
-  const [selectedEvent, setSelectedEvent] = useState<t_pb_OutreachEvent | null>(
-    null
-  );
+  const [selectedEvent, setSelectedEvent] =
+    useState<pb_OutreachEventsItem | null>(null);
 
   // Fetch events
   const {
@@ -32,7 +34,7 @@ export default function ManageEventsPage() {
   } = useSWR("outreach-events", async () => {
     const response = await pb
       .collection("OutreachEvents")
-      .getFullList<t_pb_OutreachEvent>({
+      .getFullList<pb_OutreachEventsItem>({
         sort: "-created"
       });
     return response;
@@ -45,7 +47,7 @@ export default function ManageEventsPage() {
       if (!selectedEvent) return [];
       const response = await pb
         .collection("OutreachSessions")
-        .getFullList<t_pb_OutreachSession>({
+        .getFullList<pb_OutreachSessionsItem>({
           filter: `event = "${selectedEvent.id}"`,
           expand: "user",
           sort: "-created"
@@ -73,7 +75,7 @@ export default function ManageEventsPage() {
     }
   }, [mutateEvents, selectedEvent]);
 
-  const handleEventSelect = useCallback((event: t_pb_OutreachEvent) => {
+  const handleEventSelect = useCallback((event: pb_OutreachEventsItem) => {
     setSelectedEvent(event);
   }, []);
 

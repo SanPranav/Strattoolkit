@@ -3,7 +3,10 @@ import { toast } from "sonner";
 import { pb, recordToImageUrl } from "@/lib/pbaseClient";
 import { formatMinutes } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { t_pb_OutreachEvent, t_pb_OutreachSession } from "@/lib/types";
+import type {
+  pb_OutreachEventsItem,
+  pb_OutreachSessionsItem
+} from "@/lib/types";
 import { Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +22,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface EventSessionsTableProps {
-  event: t_pb_OutreachEvent;
-  sessions: t_pb_OutreachSession[];
+  event: pb_OutreachEventsItem;
+  sessions: pb_OutreachSessionsItem[];
   onSessionDeleted: () => void;
 }
 
