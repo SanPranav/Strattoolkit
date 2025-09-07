@@ -1,3 +1,5 @@
+"use server";
+
 import { Suspense } from "react";
 
 import { execPocketbase } from "@/lib/pbaseServer";
@@ -7,6 +9,7 @@ import Loading from "./loading";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 import { ScoutingQuestionConfig } from "@/lib/types/scoutingTypes";
+import { Button } from "@/components/ui/button";
 
 export default async function ScoutingPage() {
   // const { scoutingConfig, userId } = {
@@ -15,7 +18,8 @@ export default async function ScoutingPage() {
   //       name: "Team",
   //       type: "select",
   //       select_key: "sk_EventTeams",
-  //       description: "The Team you are scouting"
+  //       description: "The Team you are scouting",
+  //       optional: true
   //     },
   //     {
   //       name: "L4 Scored",
@@ -47,6 +51,7 @@ export default async function ScoutingPage() {
       const record = await pb
         .collection("ScoutingSettings")
         .getFirstListItem("key='ScoutingConfig'");
+      console.log(pb.authStore.record?.id);
       return { scoutingConfig: record.value, userId: pb.authStore.record?.id };
     } catch (e) {
       console.warn("[ScoutingPage]", e);
@@ -63,6 +68,7 @@ export default async function ScoutingPage() {
             Submit match data for team analysis
           </p>
         </div>
+        <NavButtons className="p-3 flex flex-col gap-3" />
       </div>
       <Card className="flex md:hidden bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
         <CardHeader className="pb-3">
@@ -73,11 +79,27 @@ export default async function ScoutingPage() {
           <p className="text-sm text-muted-foreground">
             Fill out all required fields to submit scouting data
           </p>
+          <NavButtons className="w-full flex gap-3 pt-3" />
         </CardHeader>
       </Card>
       <Suspense fallback={<Loading />}>
         <ScoutingForm config={scoutingConfig} userId={userId || ""} />
       </Suspense>
+    </div>
+  );
+}
+
+function NavButtons({ className }: { className: string }) {
+  return (
+    <div {...{ className }}>
+      <Button variant={"outline"} className="flex-1">
+        Responses
+      </Button>
+      {false && (
+        <Button variant={"outline"} className="flex-1">
+          Configure
+        </Button>
+      )}
     </div>
   );
 }

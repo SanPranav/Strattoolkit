@@ -13,9 +13,7 @@ export function createResolver(config: ScoutingQuestionConfig[]) {
         if (cfg.optional) {
           bTemp = bTemp.optional();
         }
-        if (cfg.default !== undefined) {
-          bTemp = bTemp.default(cfg.default);
-        }
+        bTemp = bTemp.default(cfg.default ?? false);
         obj[cfg.name] = bTemp;
         break;
 

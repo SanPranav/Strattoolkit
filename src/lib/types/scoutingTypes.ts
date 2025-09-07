@@ -65,10 +65,14 @@ export type ScoutingQuestionConfig =
 
 export interface ScoutingSubmission {
   user: string;
-  teamNumber?: string;
-  matchNumber?: string;
-  data: any;
-  created: string;
+  data: Record<string, string | number | boolean>;
+  date: Date;
+}
+
+export interface DexieScoutingSubmission {
+  user: string;
+  data: string;
+  date: Date;
 }
 
 export interface SelectOption {

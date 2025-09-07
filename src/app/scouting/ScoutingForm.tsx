@@ -63,12 +63,12 @@ export default function ScoutingForm({ config, userId }: ScoutingFormProps) {
       const submission = {
         user: userId,
         data,
-        created: new Date().toISOString()
+        date: new Date()
       };
 
       const result = await handleFormSubmission(submission);
 
-      if (result.success) {
+      if (!result.error) {
         toast.success("Scouting data submitted successfully!", {
           id: "submit"
         });
@@ -122,6 +122,7 @@ export default function ScoutingForm({ config, userId }: ScoutingFormProps) {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <p className="text-muted-foreground">{userId}</p>
                 <Badge variant="outline" className="text-sm">
                   {config.length} Questions
                 </Badge>
@@ -137,7 +138,7 @@ export default function ScoutingForm({ config, userId }: ScoutingFormProps) {
         </Card>
 
         {/* Form Fields */}
-        <Card>
+        <Card className="pt-0">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid gap-6 sm:gap-8">

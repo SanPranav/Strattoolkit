@@ -80,8 +80,8 @@ export function SelectField({ question }: SelectFieldProps) {
                       </SelectItem>
                     )
                 )}
-              {options.length === 0 && !isLoading && (
-                <SelectItem value="" disabled>
+              {options.length === 0 && (
+                <SelectItem value="noop" disabled>
                   No options available
                 </SelectItem>
               )}
