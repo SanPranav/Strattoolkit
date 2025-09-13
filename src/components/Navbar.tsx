@@ -29,17 +29,27 @@ import {
 import NavbarSkeleton from "./skeletons/NavbarSkeleton";
 import { Separator } from "@/components/ui/separator";
 
+const PROFILE_ITEM = {
+  url: "/user/profile",
+  msg: "Going to Profile",
+  func: () => {
+    toast.warning("Under Construction");
+    return false;
+  }
+};
+
+const LOGIN_ITEM = {
+  url: "/auth/login",
+  msg: "Going to Login"
+};
+
 const NAV_ITEMS = [
   {
     onlyHomePersist: true,
     icon: <User className="h-5 w-5" />,
     label: "Home",
     url: "/",
-    msg: "",
-    func: () => {
-      toast.warning("Under Construction");
-      return false;
-    }
+    msg: ""
   },
   {
     icon: <SearchCode className="h-5 w-5" />,
@@ -56,7 +66,16 @@ const NAV_ITEMS = [
     label: "Outreach",
     url: "/outreach",
     msg: "Going to the Outreach Sheet"
-  },
+  }
+  // {
+  //   icon: <Settings className="h-5 w-5" />,
+  //   label: "Admin",
+  //   url: "/admin",
+  //   msg: "Going to Admin"
+  // }
+];
+
+const USER_ITEMS = [
   {
     onlyHomePersist: true,
     icon: <LogOut className="h-5 w-5" />,
@@ -68,27 +87,7 @@ const NAV_ITEMS = [
       return false;
     }
   }
-  // {
-  //   icon: <Settings className="h-5 w-5" />,
-  //   label: "Admin",
-  //   url: "/admin",
-  //   msg: "Going to Admin"
-  // }
 ];
-
-const PROFILE_ITEM = {
-  url: "/user/profile",
-  msg: "Going to Profile",
-  func: () => {
-    toast.warning("Under Construction");
-    return false;
-  }
-};
-
-const LOGIN_ITEM = {
-  url: "/auth/login",
-  msg: "Going to Login"
-};
 
 export type NavItems = typeof NAV_ITEMS;
 
@@ -214,6 +213,26 @@ function Mobile({ navItems, user, onNavigate }: ChildProps) {
               </Button>
             ))}
 
+            {user &&
+              USER_ITEMS.map((item, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  className="w-full justify-start text-left h-12 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  onClick={() =>
+                    handleNavigation({
+                      url: item.url,
+                      msg: item?.msg,
+                      func: item?.func
+                    })
+                  }>
+                  <div className="flex items-center space-x-3">
+                    {item.icon}
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </div>
+                </Button>
+              ))}
+
             <Separator className="my-4" />
 
             {/* Account/Login Button */}
@@ -326,6 +345,27 @@ function Desktop({ navItems, user, onNavigate, defaultToShown }: ChildProps) {
                 </span>
               </Button>
             ))}
+
+            {user &&
+              USER_ITEMS.map((item, index) => (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-all duration-300 ease-in-out opacity-100"
+                  key={index}
+                  onClick={onNavigate.bind(null, {
+                    url: item.url,
+                    msg: item?.msg,
+                    func: item?.func
+                  })}>
+                  <div className="size-4 transition-all duration-300 ease-in-out">
+                    {item.icon}
+                  </div>
+                  <span className="text-sm font-medium transition-all duration-300 ease-in-out">
+                    {item.label}
+                  </span>
+                </Button>
+              ))}
 
             {user ? (
               <div className="flex items-center space-x-3 pl-6 ml-2 border-l border-border">
