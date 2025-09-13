@@ -1,31 +1,27 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { ScoutingQuestionConfig } from "@/lib/types/scoutingTypes";
+import { ScoutingQuestionConfig } from "@/lib/types/scouting";
 
 export function createResolver(config: ScoutingQuestionConfig[]) {
   let obj: any = {};
 
   config.forEach((cfg) => {
     switch (cfg.type) {
-      case "boolean":
-        let bTemp: any = z.boolean();
-        if (cfg.optional) {
-          bTemp = bTemp.optional();
-        }
-        bTemp = bTemp.default(cfg.default ?? false);
-        obj[cfg.name] = bTemp;
+      case "team":
+        let teamTemp: any = z.string();
+        obj[cfg.name] = teamTemp;
         break;
 
-      case "text":
-        let sTemp: any = z.string();
+      case "select":
+        let selectTemp: any = z.string();
         if (cfg.optional) {
-          sTemp = sTemp.optional();
+          selectTemp = selectTemp.optional();
         }
         if (cfg.default !== undefined) {
-          sTemp = sTemp.default(cfg.default);
+          selectTemp = selectTemp.default(cfg.default);
         }
-        obj[cfg.name] = sTemp;
+        obj[cfg.name] = selectTemp;
         break;
 
       case "number":
@@ -42,6 +38,37 @@ export function createResolver(config: ScoutingQuestionConfig[]) {
         obj[cfg.name] = nTemp;
         break;
 
+      case "text":
+        let sTemp: any = z.string();
+        if (cfg.optional) {
+          sTemp = sTemp.optional();
+        }
+        if (cfg.default !== undefined) {
+          sTemp = sTemp.default(cfg.default);
+        }
+        obj[cfg.name] = sTemp;
+        break;
+
+      case "textarea":
+        let taTemp: any = z.string();
+        if (cfg.optional) {
+          taTemp = taTemp.optional();
+        }
+        if (cfg.default !== undefined) {
+          taTemp = taTemp.default(cfg.default);
+        }
+        obj[cfg.name] = taTemp;
+        break;
+
+      case "boolean":
+        let bTemp: any = z.boolean();
+        if (cfg.optional) {
+          bTemp = bTemp.optional();
+        }
+        bTemp = bTemp.default(cfg.default ?? false);
+        obj[cfg.name] = bTemp;
+        break;
+
       case "slider":
         let slTemp: any = z.number();
         slTemp = slTemp.min(cfg.min);
@@ -54,28 +81,6 @@ export function createResolver(config: ScoutingQuestionConfig[]) {
           slTemp = slTemp.default(cfg.default);
         }
         obj[cfg.name] = slTemp;
-        break;
-
-      case "select":
-        let selectTemp: any = z.string();
-        if (cfg.optional) {
-          selectTemp = selectTemp.optional();
-        }
-        if (cfg.default !== undefined) {
-          selectTemp = selectTemp.default(cfg.default);
-        }
-        obj[cfg.name] = selectTemp;
-        break;
-
-      case "textarea":
-        let taTemp: any = z.string();
-        if (cfg.optional) {
-          taTemp = taTemp.optional();
-        }
-        if (cfg.default !== undefined) {
-          taTemp = taTemp.default(cfg.default);
-        }
-        obj[cfg.name] = taTemp;
         break;
 
       default:

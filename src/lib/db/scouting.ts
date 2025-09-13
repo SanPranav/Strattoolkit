@@ -6,13 +6,13 @@ import {
   DexieScoutingSubmission,
   ScoutingSubmission,
   SelectOption
-} from "../types/scoutingTypes";
+} from "../types/scouting";
 
 export const dexie = new Dexie("ScoutingFormResponses") as Dexie & {
   responses: EntityTable<DexieScoutingSubmission, "id">;
 };
-dexie.version(1).stores({
-  responses: "++id, user, data, date"
+dexie.version(3).stores({
+  responses: "++id, user, team, data, date, uploaded"
 });
 
 /**
@@ -23,8 +23,10 @@ export async function handleFormSubmission(submission: ScoutingSubmission) {
   try {
     const stringSubmission = {
       ...submission,
-      data: JSON.stringify(submission.data)
-    };
+      team: JSON.stringify(submission.team),
+      data: JSON.stringify(submission.data),
+      uploaded: false
+    } satisfies Omit<DexieScoutingSubmission, "id">;
 
     await dexie.responses.add(stringSubmission as any);
 
@@ -38,9 +40,7 @@ export async function handleFormSubmission(submission: ScoutingSubmission) {
   }
 }
 
-export async function fetchTeamOptions(): Promise<SelectOption[]> {
-  return [];
-
+export async function fetchTeamOptions() {
   try {
     const record = await pb
       .collection("ScoutingSettings")
@@ -58,12 +58,7 @@ export async function fetchTeamOptions(): Promise<SelectOption[]> {
   }
 }
 
-/**
- * Fetches team options for select fields
- */
-export async function fetchSelectOptions(key: string): Promise<SelectOption[]> {
-  return [];
-
+export async function fetchSelectOptions(key: string) {
   try {
     const record = await pb
       .collection("ScoutingSettings")
@@ -81,10 +76,7 @@ export async function fetchSelectOptions(key: string): Promise<SelectOption[]> {
   }
 }
 
-/**
- * Gets all responses from IndexedDB
- */
-export async function getAllResponses(): Promise<DexieScoutingSubmission[]> {
+export async function getAllResponses() {
   try {
     return await dexie.responses.toArray();
   } catch (error) {
@@ -93,16 +85,17 @@ export async function getAllResponses(): Promise<DexieScoutingSubmission[]> {
   }
 }
 
-/**
- * Uploads all responses from IndexedDB
- * Formats responses as [{user, data, date}] for upload
- */
-export async function uploadResponses(): Promise<void> {
+export async function uploadResponses() {
   try {
-    const responses = await dexie.responses.toArray();
+    const responses = await dexie.responses
+      .where("uploaded")
+      .equals("false")
+      .toArray();
 
     const formattedResponses = responses.map((response) => ({
+      id: response.id!,
       user: response.user,
+      team: response.team,
       data: response.data, // Already stringified JSON
       date: response.date
     }));
@@ -111,7 +104,18 @@ export async function uploadResponses(): Promise<void> {
 
     // TODO: Implement actual upload logic
     // This is where you'll add the upload functionality
+    return formattedResponses;
   } catch (error) {
-    console.error("Failed to upload responses:", error);
+    console.error("Failed to get responses for upload:", error);
+    throw error;
+  }
+}
+
+export async function markResponseAsUploaded(id: number) {
+  try {
+    await dexie.responses.update(id, { uploaded: true });
+  } catch (error) {
+    console.error(`Failed to mark response ${id} as uploaded:`, error);
+    throw error;
   }
 }

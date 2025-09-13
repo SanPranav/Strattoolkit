@@ -8,14 +8,14 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { BaseField } from "./BaseField";
-import { SelectQuestionConfig, SelectOption } from "@/lib/types/scouting";
-import { fetchSelectOptions } from "@/lib/db/scouting";
+import { TeamQuestionConfig, SelectOption } from "@/lib/types/scouting";
+import { fetchTeamOptions } from "@/lib/db/scouting";
 
-interface SelectFieldProps {
-  question: SelectQuestionConfig;
+interface TeamFieldProps {
+  question: TeamQuestionConfig;
 }
 
-export function SelectField({ question }: SelectFieldProps) {
+export function TeamField({ question }: TeamFieldProps) {
   const {
     control,
     formState: { errors }
@@ -28,7 +28,7 @@ export function SelectField({ question }: SelectFieldProps) {
     const loadOptions = async () => {
       setIsLoading(true);
       try {
-        const teamOptions = await fetchSelectOptions(question.select_key);
+        const teamOptions = await fetchTeamOptions();
         setOptions(teamOptions);
       } catch (error) {
         console.error("Failed to load select options:", error);

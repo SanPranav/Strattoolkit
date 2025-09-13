@@ -1,5 +1,5 @@
 import PocketBase from "pocketbase";
-import { type pbCol_Users } from "./types/pbTypes";
+import { type User } from "./types/pocketbase";
 
 const POCKETBASE_URL = process.env.NEXT_PUBLIC_PB_URL || "";
 
@@ -11,7 +11,7 @@ if (!POCKETBASE_URL) {
 
 export const pb = new PocketBase(POCKETBASE_URL);
 
-export function recordToImageUrl(record?: pbCol_Users) {
+export function recordToImageUrl(record?: User) {
   if (!record || !record.id) return null;
 
   const fileUrl = new URL(

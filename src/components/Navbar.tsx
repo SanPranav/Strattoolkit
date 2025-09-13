@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavbar } from "@/hooks/useNavbar";
 import { recordToImageUrl } from "@/lib/pbaseClient";
 import { logout } from "@/lib/auth";
-import type { pbCol_Users } from "@/lib/types/pbTypes";
+import type { User } from "@/lib/types/pocketbase";
 
 import {
   User,
@@ -93,7 +93,7 @@ const LOGIN_ITEM = {
 export type NavItems = typeof NAV_ITEMS;
 
 type ChildProps = {
-  user: pbCol_Users | null;
+  user: User | null;
   navItems: typeof NAV_ITEMS;
   onNavigate: (url: { url: string; msg?: string }) => void;
 } & ReturnType<typeof useNavbar>;

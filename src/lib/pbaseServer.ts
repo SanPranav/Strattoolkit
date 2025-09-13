@@ -13,11 +13,10 @@ export async function execPocketbase<T>(fn: (pb: PocketBase) => T): Promise<T> {
   );
 
   const authData = await getPocketbaseCookie();
-
   pbServer.authStore.loadFromCookie(authData);
   // pbServer.collection("users").authRefresh();
 
-  const ret = fn(pbServer);
+  const ret = await fn(pbServer);
 
   pbServer.authStore.clear();
 

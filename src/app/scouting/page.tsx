@@ -1,58 +1,23 @@
 "use server";
 
 import { Suspense } from "react";
-
-import { execPocketbase } from "@/lib/pbaseServer";
-import ScoutingForm from "./ScoutingForm";
-import Loading from "./loading";
-
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
-import { ScoutingQuestionConfig } from "@/lib/types/scoutingTypes";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { execPocketbase } from "@/lib/pbaseServer";
+
+import { FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+
+import Loading from "./loading";
+import ScoutingForm from "./ScoutingForm";
 
 export default async function ScoutingPage() {
-  // const { scoutingConfig, userId } = {
-  //   scoutingConfig: [
-  //     {
-  //       name: "Team",
-  //       type: "select",
-  //       select_key: "sk_EventTeams",
-  //       description: "The Team you are scouting",
-  //       optional: true
-  //     },
-  //     {
-  //       name: "L4 Scored",
-  //       type: "number",
-  //       min: 0,
-  //       max: 100
-  //     },
-  //     {
-  //       name: "Broke Down?",
-  //       type: "boolean",
-  //       boolean_default: false,
-  //       description: "Did the robot ever stop moving?"
-  //     },
-  //     {
-  //       name: "Climb Level",
-  //       type: "slider",
-  //       min: 0,
-  //       max: 4,
-  //       default: 0,
-  //       description: "Did the robot climb? If so, how high?"
-  //     }
-  //   ] as ScoutingQuestionConfig[],
-
-  //   userId: "wo294dln2thb20j"
-  // };
-
   const { scoutingConfig, userId } = await execPocketbase(async (pb) => {
     try {
       const record = await pb
         .collection("ScoutingSettings")
         .getFirstListItem("key='ScoutingConfig'");
-      console.log(pb.authStore.record?.id);
+      console.log(pb.authStore.record);
       return { scoutingConfig: record.value, userId: pb.authStore.record?.id };
     } catch (e) {
       console.warn("[ScoutingPage]", e);

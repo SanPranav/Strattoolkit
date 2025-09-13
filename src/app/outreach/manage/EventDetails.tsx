@@ -1,7 +1,4 @@
-import type {
-  pbCol_OutreachEvents,
-  pbCol_OutreachSessions
-} from "@/lib/types/pbTypes";
+import type { OutreachEvent, OutreachSession } from "@/lib/types/pocketbase";
 import { Calendar, Clock, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,8 +6,8 @@ import LogHoursDialog from "./LogHoursDialog";
 import EventSessionsTable from "./EventSessionsTable";
 
 interface EventDetailsProps {
-  selectedEvent: pbCol_OutreachEvents | null;
-  sessions: pbCol_OutreachSessions[] | undefined;
+  selectedEvent: OutreachEvent | null;
+  sessions: OutreachSession[] | undefined;
   onHoursLogged: () => void;
   onSessionDeleted: () => void;
 }

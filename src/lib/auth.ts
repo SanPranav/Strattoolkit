@@ -2,7 +2,7 @@ import { pb } from "./pbaseClient";
 import { BaseStates } from "./states";
 import { setPocketbaseCookie } from "./pbaseServer";
 
-import { pb_OAuthProvider } from "./types/pbTypes";
+import { pb_OAuthProvider } from "./types/pocketbase";
 import { SimpleLoginStates, SignupStates } from "./states";
 import { newUser } from "./db/user";
 

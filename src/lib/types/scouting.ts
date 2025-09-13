@@ -1,8 +1,14 @@
+export type Team = { name: string; value: number };
+
 interface BaseQuestionConfig {
   name: string;
   type: string;
   description?: string;
   optional?: boolean;
+}
+
+export interface TeamQuestionConfig extends BaseQuestionConfig {
+  type: "team";
 }
 
 export interface SelectQuestionConfig extends BaseQuestionConfig {
@@ -57,6 +63,7 @@ export interface UnknownQuestionConfig extends BaseQuestionConfig {
 
 export type ScoutingQuestionConfig =
   | SelectQuestionConfig
+  | TeamQuestionConfig
   | NumberQuestionConfig
   | BooleanQuestionConfig
   | SliderQuestionConfig
@@ -65,6 +72,7 @@ export type ScoutingQuestionConfig =
 
 export interface ScoutingSubmission {
   user: string;
+  team: Team;
   data: Record<string, string | number | boolean>;
   date: Date;
 }
@@ -72,8 +80,10 @@ export interface ScoutingSubmission {
 export interface DexieScoutingSubmission {
   id: number;
   user: string;
+  team: string;
   data: string;
   date: Date;
+  uploaded: boolean;
 }
 
 export interface SelectOption {

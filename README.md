@@ -6,6 +6,7 @@ Our comprehensive solution for tracking everything!
 
 1. **Outreach Tracking** - Log and track team member outreach hours, with approval workflows for mentors
 2. **Scouting** - Collect data on other teams' robot performance during competitions to help with alliance selection
+3. **More Coming Soon!** - Plans for tool management, 
 
 ## Features
 
@@ -25,9 +26,8 @@ Our comprehensive solution for tracking everything!
 
 ### Prerequisites
 
-- Node.js 18+ 
 - Bun (recommended) or npm
-- Git
+- Pocketbase
 
 ### Installation
 

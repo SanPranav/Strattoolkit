@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { pb } from "@/lib/pbaseClient";
-import type { pbCol_OutreachEvents } from "@/lib/types/pbTypes";
+import type { OutreachEvent } from "@/lib/types/pocketbase";
 import { Calendar, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +9,9 @@ import LogHoursDialog from "./LogHoursDialog";
 import Loader from "@/components/Loader";
 
 interface EventsListProps {
-  events: pbCol_OutreachEvents[] | undefined;
-  selectedEvent: pbCol_OutreachEvents | null;
-  onEventSelect: (event: pbCol_OutreachEvents) => void;
+  events: OutreachEvent[] | undefined;
+  selectedEvent: OutreachEvent | null;
+  onEventSelect: (event: OutreachEvent) => void;
   onEventDeleted: () => void;
   onHoursLogged: () => void;
   isMobile?: boolean;

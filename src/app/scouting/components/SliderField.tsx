@@ -1,7 +1,7 @@
 import { useFormContext, Controller } from "react-hook-form";
 import { Slider } from "@/components/ui/slider";
 import { BaseField } from "./BaseField";
-import { SliderQuestionConfig } from "@/lib/types/scoutingTypes";
+import { SliderQuestionConfig } from "@/lib/types/scouting";
 
 interface SliderFieldProps {
   question: SliderQuestionConfig;

@@ -1,7 +1,7 @@
 import { useFormContext, Controller } from "react-hook-form";
 import { Switch } from "@/components/ui/switch";
 import { BaseField } from "./BaseField";
-import { BooleanQuestionConfig } from "@/lib/types/scoutingTypes";
+import { BooleanQuestionConfig } from "@/lib/types/scouting";
 
 interface BooleanFieldProps {
   question: BooleanQuestionConfig;

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { pb } from "@/lib/pbaseClient";
 import { formatMinutes } from "@/lib/utils";
-import type { pbCol_OutreachEvents, pbCol_Users } from "@/lib/types/pbTypes";
+import type { OutreachEvent, User } from "@/lib/types/pocketbase";
 
 import { Clock, Loader2, Plus, Trash2, User } from "lucide-react";
 
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 
 interface LogHoursDialogProps {
-  event: pbCol_OutreachEvents;
+  event: OutreachEvent;
   onHoursLogged: () => void;
 }
 
@@ -41,7 +41,7 @@ export default function LogHoursDialog({
   onHoursLogged
 }: LogHoursDialogProps) {
   const [open, setOpen] = useState(false);
-  const [users, setUsers] = useState<pbCol_Users[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [fetchingUsers, setFetchingUsers] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -62,7 +62,7 @@ export default function LogHoursDialog({
   const fetchUsers = async function () {
     setFetchingUsers(true);
     try {
-      const response = await pb.collection("users").getFullList<pbCol_Users>({
+      const response = await pb.collection("users").getFullList<User>({
         sort: "name"
       });
 

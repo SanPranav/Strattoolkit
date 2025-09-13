@@ -12,7 +12,7 @@ import {
   ReferenceLine
 } from "recharts";
 import { pb } from "@/lib/pbaseClient";
-import type { pbCol_OutreachSessions } from "@/lib/types/pbTypes";
+import type { OutreachSession } from "@/lib/types/pocketbase";
 
 const MONTHS = {
   Jan: 1,
@@ -52,7 +52,7 @@ export default function ActivityGraph({ id }: OutreachActivityGraphProps) {
       try {
         const sessions = await pb
           .collection("OutreachSessions")
-          .getFullList<pbCol_OutreachSessions>({
+          .getFullList<OutreachSession>({
             filter: `user="${id}"`,
             expand: "event"
           });

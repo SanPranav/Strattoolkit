@@ -7,6 +7,8 @@
 - - - Autosave
 - - - No wifi stuff
 - - - caching
+- - - upload
+- - - display data
 
 # TESTING
 - Outreach

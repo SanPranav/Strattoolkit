@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { toast } from "sonner";
+import { handleFormSubmission } from "@/lib/db/scouting";
+import { useNavbar } from "@/hooks/useNavbar";
+
+import { ScoutingQuestionConfig } from "@/lib/types/scouting";
+
 import {
   Card,
   CardContent,
@@ -15,10 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Send, Loader2, RotateCcw, AlertCircle } from "lucide-react";
 
-import { ScoutingQuestionConfig } from "@/lib/types/scoutingTypes";
-import { handleFormSubmission } from "@/lib/db/scouting";
-import { useNavbar } from "@/hooks/useNavbar";
-
 import { BooleanField } from "./components/BooleanField";
 import { NumberField } from "./components/NumberField";
 import { SliderField } from "./components/SliderField";
@@ -26,6 +27,7 @@ import { TextField } from "./components/TextField";
 import { TextareaField } from "./components/TextareaField";
 import { SelectField } from "./components/SelectField";
 import { createResolver } from "./schema";
+import { TeamField } from "./components/TeamField";
 
 interface ScoutingFormProps {
   config: ScoutingQuestionConfig[];
@@ -52,40 +54,40 @@ export default function ScoutingForm({ config, userId }: ScoutingFormProps) {
   useEffect(() => {
     setDefaultShown(false);
     setMobileNavbarSide("right");
+
+    console.log(userId);
   }, [setDefaultShown, setMobileNavbarSide]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async function (data: any) {
     setIsSubmitting(true);
 
-    try {
-      toast.loading("Submitting scouting data...", { id: "submit" });
+    toast.loading("Submitting scouting data...", { id: "sSubmit" });
 
-      const submission = {
-        user: userId,
-        data,
-        date: new Date()
-      };
+    const submission = {
+      user: userId,
+      team: data.team,
+      data,
+      date: new Date()
+    };
 
-      const result = await handleFormSubmission(submission);
+    console.log(submission);
 
-      if (!result.error) {
-        toast.success("Scouting data submitted successfully!", {
-          id: "submit"
-        });
-        reset();
-      } else {
-        toast.error(result.error || "Failed to submit data", { id: "submit" });
-      }
-    } catch (error) {
-      console.error("Submission error:", error);
-      toast.error("An unexpected error occurred", { id: "submit" });
-    } finally {
-      setIsSubmitting(false);
+    const result = await handleFormSubmission(submission);
+
+    if (!result.error) {
+      toast.success("Scouting data submitted successfully!", { id: "sSubmit" });
+      reset();
+    } else {
+      toast.error(result.error || "Failed to submit data", { id: "sSubmit" });
     }
+
+    setIsSubmitting(false);
   };
 
-  const renderField = (question: ScoutingQuestionConfig, index: number) => {
+  const renderField = function (question: ScoutingQuestionConfig) {
     switch (question.type) {
+      case "team":
+        return <TeamField key={question.name} question={question} />;
       case "boolean":
         return <BooleanField key={question.name} question={question} />;
       case "number":
@@ -110,7 +112,7 @@ export default function ScoutingForm({ config, userId }: ScoutingFormProps) {
       <div className="w-full space-y-6">
         {/* Progress Section */}
         <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardHeader>
+          <CardHeader className="mb-0">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
@@ -122,7 +124,6 @@ export default function ScoutingForm({ config, userId }: ScoutingFormProps) {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <p className="text-muted-foreground">{userId}</p>
                 <Badge variant="outline" className="text-sm">
                   {config.length} Questions
                 </Badge>
@@ -144,7 +145,7 @@ export default function ScoutingForm({ config, userId }: ScoutingFormProps) {
               <div className="grid gap-6 sm:gap-8">
                 {config.map((question, index) => (
                   <div key={question.name}>
-                    {renderField(question, index)}
+                    {renderField(question)}
                     {index < config.length - 1 && (
                       <Separator className="mt-6" />
                     )}

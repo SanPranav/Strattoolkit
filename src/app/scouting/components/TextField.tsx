@@ -1,7 +1,7 @@
 import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { BaseField } from "./BaseField";
-import { TextQuestionConfig } from "@/lib/types/scoutingTypes";
+import { TextQuestionConfig } from "@/lib/types/scouting";
 
 interface TextFieldProps {
   question: TextQuestionConfig;

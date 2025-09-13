@@ -1,7 +1,7 @@
 import { useFormContext } from "react-hook-form";
 import { Textarea } from "@/components/ui/textarea";
 import { BaseField } from "./BaseField";
-import { TextareaQuestionConfig } from "@/lib/types/scoutingTypes";
+import { TextareaQuestionConfig } from "@/lib/types/scouting";
 
 interface TextareaFieldProps {
   question: TextareaQuestionConfig;
