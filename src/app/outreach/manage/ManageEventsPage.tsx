@@ -117,7 +117,7 @@ export default function ManageEventsPage() {
         />
         <EventDetails
           selectedEvent={selectedEvent}
-          sessions={sessions as t_pb_OutreachSession[]}
+          sessions={sessions || []}
           onHoursLogged={handleHoursLogged}
           onSessionDeleted={handleSessionDeleted}
         />

@@ -210,7 +210,7 @@ export default function LogHoursDialog({
       return;
     }
 
-    if (eventName === event.name && eventDate === event.date.split("T")[0]) {
+    if (eventName === event.name && eventDate === event.date.split(" ")[0]) {
       toast.message("No changes to save");
       return;
     }

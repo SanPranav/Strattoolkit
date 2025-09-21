@@ -45,10 +45,9 @@ export default function LoginForm() {
   }, [router]);
 
   const handleOAuth = async function (type: "discord" | "google") {
-    const loader = toast.loading("Continue on the popup ...", {
+    toast.loading("Continue on the popup ...", {
       id: "oAuthLoader"
     });
-
     const state = await loginOAuth(type);
 
     switch (state) {

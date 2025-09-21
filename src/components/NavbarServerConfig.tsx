@@ -10,12 +10,12 @@ type Props = {
 export function NavbarServerConfig({ ...props }: Props) {
   const navbar = useNavbar();
   useEffect(() => {
-    props.setDefaultShown != undefined
-      ? navbar.setDefaultShown(props.setDefaultShown)
-      : null;
-    props.setRenderOnlyHome != undefined
-      ? navbar.setRenderOnlyHome(props.setRenderOnlyHome)
-      : null;
-  }, []);
+    if (props.setDefaultShown !== undefined) {
+      navbar.setDefaultShown(props.setDefaultShown);
+    }
+    if (props.setRenderOnlyHome !== undefined) {
+      navbar.setRenderOnlyHome(props.setRenderOnlyHome);
+    }
+  }, [props.setDefaultShown, props.setRenderOnlyHome, navbar]);
   return null;
 }
