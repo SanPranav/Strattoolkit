@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
   if (![...authedOnlyRoutes, ...adminOnlyRoutes].includes(nextUrl.pathname))
     return NextResponse.next();
 
-  const pb = await PBServer.getClient();
+  const pb = await PBServer.getInstance();
   const record = pb.authStore.record;
 
   if (!record) {

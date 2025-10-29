@@ -7,7 +7,7 @@ import { logger } from "../logger";
 export async function fetchEvents(
   client: PBClientBase
 ): Promise<[ErrorCodes, null] | [null, OutreachEvent[]]> {
-  return client.getFullList<OutreachEvent>("OutreachEvents", {
+  return client.getFullList<OutreachEvent>("OutreachEvents", undefined, {
     sort: "-created"
   });
 }
@@ -65,7 +65,7 @@ export async function fetchSessionsForEvent(
   eventId: string,
   client: PBClientBase
 ): Promise<[ErrorCodes, null] | [null, OutreachSession[]]> {
-  return client.getFullList<OutreachSession>("OutreachSessions", {
+  return client.getFullList<OutreachSession>("OutreachSessions", undefined, {
     filter: `event = "${eventId}"`,
     expand: "user",
     sort: "-created"
@@ -123,6 +123,7 @@ export async function fetchUserSessionEventDates(
 ): Promise<[ErrorCodes, null] | [null, string[]]> {
   const [error, sessions] = await client.getFullList<OutreachSession>(
     "OutreachSessions",
+    undefined,
     {
       filter: `user="${userId}"`,
       expand: "event"
@@ -138,4 +139,21 @@ export async function fetchUserSessionEventDates(
     .filter(Boolean) as string[];
 
   return [null, dates];
+}
+export async function getOutreachMinutesCutoff(client: PBClientBase) {
+  const [error, record] = await client.getFirstListItem(
+    "Settings",
+    "key='OutreachMinsCutoff'"
+  );
+
+  if (error) {
+    logger.error(
+      { key: "OutreachMinsCutoff", code: error },
+      "Failed to fetch outreach minutes cutoff"
+    );
+    return 900;
+  }
+
+  const outreachMinutesCutoff = parseInt(record.value) || 900;
+  return outreachMinutesCutoff;
 }

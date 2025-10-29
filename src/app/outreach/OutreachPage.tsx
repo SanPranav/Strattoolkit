@@ -47,7 +47,7 @@ const fetcher = async (url: string): Promise<PaginatedResponse> => {
   const [error, data] = await listUserData(
     pageNum,
     PAGE_SIZE,
-    PBBrowser.getClient()
+    PBBrowser.getInstance()
   );
 
   if (error) {

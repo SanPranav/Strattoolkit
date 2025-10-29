@@ -29,7 +29,7 @@ export async function loginEmailPass(
     return SimpleLoginStates.ERR_PASSWORD_TOO_SHORT;
   }
 
-  const usersCol = PBBrowser.getClient().pbClient.collection("users");
+  const usersCol = PBBrowser.getInstance().pbClient.collection("users");
 
   try {
     const user = await usersCol.getFirstListItem(`email="${email}"`);
@@ -54,7 +54,7 @@ export async function loginEmailPass(
 }
 
 export async function loginOAuth(provider: pb_OAuthProvider) {
-  const authData = await PBBrowser.getClient()
+  const authData = await PBBrowser.getInstance()
     .pbClient.collection("users")
     .authWithOAuth2({
       provider,
@@ -110,7 +110,7 @@ export async function signupEmailPass(
     return SignupStates.ERR_PASSWORD_TOO_SHORT;
   }
 
-  const result = await newUser(email, password1, name, PBBrowser.getClient());
+  const result = await newUser(email, password1, name, PBBrowser.getInstance());
 
   if (result[0]) {
     if (result[0] === "01x03") {
@@ -130,11 +130,11 @@ export async function signupEmailPass(
 }
 
 async function storeServerCookie() {
-  setPBAuthCookie(PBBrowser.getClient().authStore.exportToCookie());
+  setPBAuthCookie(PBBrowser.getInstance().authStore.exportToCookie());
 }
 
 export function logout() {
-  PBBrowser.getClient().authStore.clear();
+  PBBrowser.getInstance().authStore.clear();
   clearPBAuthCookie();
   window?.location.reload();
 }

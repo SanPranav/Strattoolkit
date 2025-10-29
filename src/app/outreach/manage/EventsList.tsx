@@ -41,7 +41,7 @@ export default function EventsList({
     }
 
     try {
-      const [error] = await deleteEvent(eventId, PBBrowser.getClient());
+      const [error] = await deleteEvent(eventId, PBBrowser.getInstance());
 
       if (error) {
         throw new Error(ErrorToString[error] ?? error);

@@ -45,10 +45,13 @@ export default function CreateEventDialog({
 
     setLoading(true);
     try {
-      const [error, created] = await createEvent({
-        name: formData.name,
-        date: formData.date
-      }, PBBrowser.getClient());
+      const [error, created] = await createEvent(
+        {
+          name: formData.name,
+          date: formData.date
+        },
+        PBBrowser.getInstance()
+      );
 
       if (error || !created) {
         const message = error ? ErrorToString[error] ?? error : "Unknown error";

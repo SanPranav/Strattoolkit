@@ -41,7 +41,7 @@ export default function EventSessionsTable({
   const handleDeleteSession = async (sessionId: string) => {
     setDeletingId(sessionId);
     try {
-      const [error] = await deleteSession(sessionId, PBBrowser.getClient());
+      const [error] = await deleteSession(sessionId, PBBrowser.getInstance());
 
       if (error) {
         throw new Error(ErrorToString[error] ?? error);

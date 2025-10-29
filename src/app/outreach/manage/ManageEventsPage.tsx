@@ -29,7 +29,7 @@ export default function ManageEventsPage() {
   );
 
   const eventsFetcher = async (): Promise<OutreachEvent[]> => {
-    const [error, data] = await fetchEvents(PBBrowser.getClient());
+    const [error, data] = await fetchEvents(PBBrowser.getInstance());
 
     if (error || !data) {
       throw new Error(
@@ -51,7 +51,7 @@ export default function ManageEventsPage() {
 
     const [error, data] = await fetchSessionsForEvent(
       selectedEvent.id,
-      PBBrowser.getClient()
+      PBBrowser.getInstance()
     );
 
     if (error || !data) {

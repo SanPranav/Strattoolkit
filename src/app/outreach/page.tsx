@@ -2,12 +2,12 @@ import { redirect } from "next/navigation";
 
 import OutreachPage from "./OutreachPage";
 import { getUserRole, hasPermission } from "@/lib/permissions";
-import { getOutreachMinutesCutoff } from "@/lib/db/settings";
+import { getOutreachMinutesCutoff } from "@/lib/db/outreach";
 import { PBServer } from "@/lib/pb";
 import { getUserData } from "@/lib/db/user";
 
 export default async function ServerDataFetcher() {
-  const pb = await PBServer.getClient();
+  const pb = await PBServer.getInstance();
 
   const [error, userData] = await getUserData(
     pb.authStore.record?.id || "",

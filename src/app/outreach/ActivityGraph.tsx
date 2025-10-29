@@ -67,7 +67,7 @@ export default function ActivityGraph({ id }: OutreachActivityGraphProps) {
     (async () => {
       const [error, timestamps] = await fetchUserSessionEventDates(
         id,
-        PBBrowser.getClient()
+        PBBrowser.getInstance()
       );
 
       if (error || !timestamps) {

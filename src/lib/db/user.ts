@@ -15,9 +15,8 @@ export async function newUser(
 ): Promise<[ErrorCodes, null] | [null, User]> {
   const [lookupError, existingUser] = await client.getFirstListItem<User>(
     "users",
-    `email="${email}"`
+    `email="${email.replace(/"/g, '\\"')}"`
   );
-
   if (existingUser) return ["01x03", null];
   if (lookupError && lookupError !== "01x404") return [lookupError, null];
 
@@ -54,7 +53,7 @@ export function registerAuthCallback(
   const authStore = client.authStore;
 
   return authStore.onChange(async (token, record) => {
-    setUser(record as User);
+    setUser(record as User | null);
     clearPBAuthCookie();
   }, true);
 }
@@ -72,7 +71,7 @@ export async function listUserData(
 export async function listAllUsers(
   client: PBClientBase
 ): Promise<[ErrorCodes, null] | [null, User[]]> {
-  return client.getFullList<User>("users", { sort: "name" });
+  return client.getFullList<User>("users", undefined, { sort: "name" });
 }
 
 export async function getUserData(
@@ -81,10 +80,9 @@ export async function getUserData(
 ): Promise<[ErrorCodes, null] | [null, UserData]> {
   const [error, data] = await client.getFirstListItem<UserData>(
     "UserData",
-    `user='${userId}'`,
+    `user='${userId.replace(/'/g, "\\'")}'`,
     { expand: "user" }
   );
-
   if (error) {
     return [error, null];
   }

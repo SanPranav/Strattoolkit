@@ -41,7 +41,7 @@ export default function EditUserDialog({
     const state = await manualModifyOutreachHours(
       userData.expand?.user.id || "",
       deltaMinutes,
-      PBBrowser.getClient()
+      PBBrowser.getInstance()
     );
 
     switch (state) {

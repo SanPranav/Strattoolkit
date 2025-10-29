@@ -1,12 +1,15 @@
 import { Dexie, type EntityTable } from "dexie";
+import type { RecordModel } from "pocketbase";
 
-import { pb } from "@/lib/pbaseClient";
+import { type PBClientBase } from "@/lib/pb";
 
 import {
   DexieScoutingSubmission,
+  ScoutingQuestionConfig,
   ScoutingSubmission,
   SelectOption
 } from "../types/scouting";
+import { ErrorCodes } from "../states";
 import { logger } from "../logger";
 
 export const dexie = new Dexie("ScoutingFormResponses") as Dexie & {
@@ -41,47 +44,74 @@ export async function handleFormSubmission(submission: ScoutingSubmission) {
   }
 }
 
-export async function fetchTeamOptions() {
-  try {
-    const record = await pb
-      .collection("ScoutingSettings")
-      .getFirstListItem(`key='sk_EventTeams'`)
-      .catch();
+export async function getScoutingConfig(
+  client: PBClientBase
+): Promise<[ErrorCodes, null] | [null, ScoutingQuestionConfig[]]> {
+  const [error, record] = await client.getFirstListItem<
+    RecordModel & { value?: ScoutingQuestionConfig[] }
+  >("ScoutingSettings", "key='ScoutingConfig'");
 
-    if (record && record.value) {
-      return record.value as SelectOption[];
-    }
-
-    return [];
-  } catch (error: any) {
-    logger.error({ key: "sk_EventTeams", err: error?.message }, "Failed to fetch select options");
-    return [];
+  if (error) {
+    logger.error(
+      { key: "ScoutingConfig", code: error },
+      "Failed to fetch scouting config"
+    );
+    return [error, null];
   }
+
+  return [null, record.value || []];
 }
 
-export async function fetchSelectOptions(key: string) {
-  try {
-    const record = await pb
-      .collection("ScoutingSettings")
-      .getFirstListItem(`key='${key}'`)
-      .catch();
+export async function fetchTeamOptions(
+  client: PBClientBase
+): Promise<[ErrorCodes, null] | [null, SelectOption[]]> {
+  const [error, record] = await client.getFirstListItem<
+    RecordModel & { value?: SelectOption[] }
+  >("ScoutingSettings", "key='sk_EventTeams'");
 
-    if (record && record.value) {
-      return record.value as SelectOption[];
+  if (error) {
+    if (error === "01x404") {
+      return [null, []];
     }
 
-    return [];
-  } catch (error: any) {
-    logger.error({ key, err: error?.message }, "Failed to fetch select options");
-    return [];
+    logger.error(
+      { key: "sk_EventTeams", code: error },
+      "Failed to fetch select options"
+    );
+    return [error, null];
   }
+
+  return [null, (record?.value as SelectOption[]) ?? []];
+}
+
+export async function fetchSelectOptions(
+  key: string,
+  client: PBClientBase
+): Promise<[ErrorCodes, null] | [null, SelectOption[]]> {
+  const [error, record] = await client.getFirstListItem<
+    RecordModel & { value?: SelectOption[] }
+  >("ScoutingSettings", `key='${key}'`);
+
+  if (error) {
+    if (error === "01x404") {
+      return [null, []];
+    }
+
+    logger.error({ key, code: error }, "Failed to fetch select options");
+    return [error, null];
+  }
+
+  return [null, (record?.value as SelectOption[]) ?? []];
 }
 
 export async function getAllResponses() {
   try {
     return await dexie.responses.toArray();
   } catch (error: any) {
-    logger.error({ err: error?.message }, "Failed to fetch responses from IndexedDB");
+    logger.error(
+      { err: error?.message },
+      "Failed to fetch responses from IndexedDB"
+    );
     return [];
   }
 }
@@ -101,7 +131,10 @@ export async function uploadResponses() {
       date: response.date
     }));
 
-    logger.info({ count: formattedResponses.length }, "Prepared responses for upload");
+    logger.info(
+      { count: formattedResponses.length },
+      "Prepared responses for upload"
+    );
 
     // TODO: Implement actual upload logic
     // This is where you'll add the upload functionality
@@ -117,7 +150,10 @@ export async function markResponseAsUploaded(id: number) {
     await dexie.responses.update(id, { uploaded: true });
     logger.info({ id }, "Marked response as uploaded");
   } catch (error: any) {
-    logger.error({ id, err: error?.message }, "Failed to mark response uploaded");
+    logger.error(
+      { id, err: error?.message },
+      "Failed to mark response uploaded"
+    );
     throw error;
   }
 }

@@ -15,25 +15,19 @@ export default function NavbarTip() {
   const { expanded, isDisabled } = useNavbar();
   const isMobile = useIsMobile();
 
-  console.log("expanded", expanded);
-
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const hasSeen = localStorage.getItem(STORAGE_KEY);
 
     if (!hasSeen && !isDisabled) {
       setVisible(true);
-      setTimeout(() => setDelayComplete(true), 2000);
+      const timer = setTimeout(() => setDelayComplete(true), 2000);
+      return () => clearTimeout(timer);
     } else {
       setVisible(false);
     }
   }, [isDisabled]);
-
-  useEffect(() => {
-    if (expanded && delayComplete) {
-      localStorage.setItem(STORAGE_KEY, "true");
-      setVisible(false);
-    }
-  }, [expanded, delayComplete]);
 
   return (
     visible && (
@@ -44,8 +38,7 @@ export default function NavbarTip() {
             ? "Tap the menu button to open navigation"
             : "Move your cursor to the top edge to reveal the navbar"
         }
-        className="fixed left-1/2 -translate-x-1/2 z-40 select-none flex flex-col items-center gap-1 pointer-events-auto 
-                  cursor-pointer animate-in fade-in transition-all duration-[350ms]"
+        className="fixed left-1/2 -translate-x-1/2 z-40 select-none flex flex-col items-center gap-1 animate-in fade-in transition-all duration-[350ms]"
         style={{
           top: expanded ? "70px" : "10px"
         }}>

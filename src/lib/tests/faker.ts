@@ -4,7 +4,7 @@ import { faker } from "@faker-js/faker";
 import { logger } from "@/lib/logger";
 import { PBBrowser } from "../pb";
 
-const pb = PBBrowser.getClient().pbClient;
+const pb = PBBrowser.getInstance().pbClient;
 
 export async function generateFakeUser() {
   return {

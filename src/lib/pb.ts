@@ -6,23 +6,17 @@ import PocketBase, {
   RecordListOptions,
   RecordModel
 } from "pocketbase";
-import Client from "pocketbase";
 import { logger } from "./logger";
 
 import { User } from "./types/pocketbase";
-import {
-  getPBAuthCookie,
-  clearPBAuthCookie,
-  setPBAuthCookie
-} from "./pbServerUtils";
+import { getPBAuthCookie } from "./pbServerUtils";
 import { ErrorCodes, ErrorToString } from "./states";
 
 if (!process.env.NEXT_PUBLIC_PB_URL) {
   throw new Error(
-    "PB_PUBLIC_URL is not defined. Please set the NEXT_PUBLIC_PB_URL environment variable."
+    "NEXT_PUBLIC_PB_URL is not defined. Please set the NEXT_PUBLIC_PB_URL environment variable."
   );
 }
-
 export function getPBUrl(forceType?: "client" | "server") {
   const url = (() => {
     if (forceType === "server") {
@@ -48,7 +42,7 @@ export function getPBUrl(forceType?: "client" | "server") {
 }
 
 export function recordToImageUrl(record?: User) {
-  if (!record || !record.id) return null;
+  if (!record || !record.id || !record.avatar) return null;
 
   const fileUrl = new URL(
     `${getPBUrl()}/api/files/${record.collectionId}/${record.id}/${
@@ -58,11 +52,10 @@ export function recordToImageUrl(record?: User) {
 
   return fileUrl;
 }
-
 export class PBClientBase {
-  protected pb: Client;
+  protected pb: PocketBase;
 
-  protected constructor(pbInstance: Client) {
+  protected constructor(pbInstance: PocketBase) {
     this.pb = pbInstance;
   }
 
@@ -143,8 +136,8 @@ export class PBClientBase {
 
   getFullList<T extends RecordModel>(
     collection: string,
-    options?: RecordListOptions,
-    batch?: number
+    batch?: number,
+    options?: RecordListOptions
   ): Promise<[ErrorCodes, null] | [null, T[]]> {
     return this.executePB(() =>
       this.pb.collection(collection).getFullList<T>(batch, options)
@@ -181,11 +174,16 @@ export class PBBrowser extends PBClientBase {
     super(new PocketBase(getPBUrl("client")));
   }
 
-  static getClient() {
+  static getInstance() {
     if (!PBBrowser.instance) {
       PBBrowser.instance = new PBBrowser();
     }
     return PBBrowser.instance;
+  }
+
+  static async getClient() {
+    const instance = PBBrowser.getInstance();
+    return instance.pbClient;
   }
 }
 
@@ -198,13 +196,13 @@ export class PBServer extends PBClientBase {
     super(new PocketBase(getPBUrl("server"), authStore));
   }
 
-  static async getClient() {
+  static async getInstance() {
     const cookie = await getPBAuthCookie();
     return new PBServer(cookie);
   }
 
-  static getPBClient() {
-    const instance = new PBServer();
+  static async getClient() {
+    const instance = await PBServer.getInstance();
     return instance.pbClient;
   }
 }

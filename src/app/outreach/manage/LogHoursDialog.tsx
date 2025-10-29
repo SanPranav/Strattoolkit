@@ -112,7 +112,7 @@ export default function LogHoursDialog({
   async function fetchUsers() {
     setFetchingUsers(true);
     try {
-      const [error, allUsers] = await listAllUsers(PBBrowser.getClient());
+      const [error, allUsers] = await listAllUsers(PBBrowser.getInstance());
 
       if (error || !allUsers) {
         throw new Error(
@@ -188,7 +188,7 @@ export default function LogHoursDialog({
           eventId: event.id,
           minutes: s.minutes
         })),
-        PBBrowser.getClient()
+        PBBrowser.getInstance()
       );
 
       if (error) {
@@ -243,7 +243,7 @@ export default function LogHoursDialog({
           name: eventName,
           date: eventDate
         },
-        PBBrowser.getClient()
+        PBBrowser.getInstance()
       );
 
       if (error) {
