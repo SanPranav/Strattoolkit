@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useIsHydrated } from "@/hooks/useIsHydrated";
@@ -30,14 +30,17 @@ export default function SignupForm() {
   const router = useRouter();
   const isHydrated = useIsHydrated();
 
-  const redirectToHome = useCallback(() => {
-    router.prefetch("/");
+  const redirectRoute = useMemo(() => {
+    if (typeof window === "undefined") return "/";
+    return new URLSearchParams(window.location.search).get("redirect") || "/";
+  }, []);
 
-    setTimeout(() => {
-      router.push("/");
-      toast.dismiss();
-    }, 300);
-  }, [router]);
+  const redirect = useCallback(() => {
+    console.log("Redirecting to:", redirectRoute);
+
+    toast.dismiss();
+    router.push(redirectRoute);
+  }, [router, redirectRoute]);
 
   const handleOAuth = async function (type: "discord" | "google") {
     toast.loading("Continue on the popup ...", { id: "oAuthLoader" });
@@ -48,7 +51,7 @@ export default function SignupForm() {
       case BaseStates.SUCCESS:
         toast.success("Login successful!", { id: "oAuthLoader" });
         logger.info({ provider: type }, "OAuth signup/login successful");
-        redirectToHome();
+        redirect();
         break;
       case BaseStates.ERROR:
       default:
@@ -86,7 +89,7 @@ export default function SignupForm() {
         case SignupStates.SUCCESS:
           toast.success("Account created successfully!", { id: "aLoader" });
           logger.info({ email }, "User signup successful");
-          redirectToHome();
+          redirect();
           break;
         case SignupStates.ERR_EMAIL_NOT_PROVIDED:
           toast.error("Email is required.", { id: "aLoader" });
@@ -144,7 +147,7 @@ export default function SignupForm() {
           break;
       }
     },
-    [redirectToHome, router]
+    [redirect, router]
   );
 
   useEffect(() => {
