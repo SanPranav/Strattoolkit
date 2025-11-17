@@ -1,7 +1,7 @@
 "use client";
 
 // React
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { recordToImageUrl } from "@/lib/pb";
 import type { UserData } from "@/lib/types/pocketbase";
 import { formatMinutes, formatPbDate, getBadgeStatusStyles } from "@/lib/utils";
@@ -19,24 +19,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import EditUserDialog from "./EditUserDialog";
+import AdjustHoursDialog from "@/app/outreach/AdjustHoursDialog";
 
 type OutreachTableProps = {
-  allUsers: UserData[];
+  users: UserData[];
   canManage: boolean;
   isLoading: boolean;
   isLoadingMore: boolean;
-  onUpdate: () => void;
   outreachMinutesCutoff: number;
   isMobile?: boolean;
-  refetchData?: () => void; // Function to refetch data after edits
+  hasMore: boolean;
+  totalItems: number;
+  onLoadMoreAction?: () => void;
+  onReloadAction: () => void;
 };
 
 const SortedTableHeads = [
   {
     key: "user",
     name: "User",
-    info: "`(${allUsers.length})`",
     descending: "Z > A",
     ascending: "A > Z",
     noSort: "",
@@ -62,15 +63,18 @@ const SortedTableHeads = [
 
 // Main OutreachTable component
 export function OutreachTable({
-  allUsers,
+  users,
   canManage,
   isLoading,
   isLoadingMore,
   outreachMinutesCutoff,
   isMobile = false,
-  refetchData
+  hasMore,
+  totalItems,
+  onLoadMoreAction,
+  onReloadAction
 }: OutreachTableProps) {
-  const [sortedUsers, setSortedUsers] = useState(allUsers);
+  const [sortedUsers, setSortedUsers] = useState(users);
 
   const [sortConfig, setSortConfig] = useState({
     key: "user",
@@ -108,8 +112,15 @@ export function OutreachTable({
         return 0;
       });
     };
-    setSortedUsers(sortUsers(allUsers, sortConfig));
-  }, [allUsers, sortConfig]);
+    setSortedUsers(sortUsers(users, sortConfig));
+  }, [users, sortConfig]);
+
+  const hasUsers = sortedUsers.length > 0;
+  const handleLoadMore = useCallback(() => {
+    if (onLoadMoreAction) {
+      onLoadMoreAction();
+    }
+  }, [onLoadMoreAction]);
 
   // Mobile Card Layout (avoid nested scroll; parent provides vertical scrolling)
   if (isMobile) {
@@ -184,7 +195,7 @@ export function OutreachTable({
                 Loading...
               </div>
             </div>
-          ) : allUsers.length === 0 ? (
+          ) : users.length === 0 ? (
             <div className="text-center py-8">No user data found</div>
           ) : (
             sortedUsers.map((userData) => (
@@ -225,7 +236,12 @@ export function OutreachTable({
                         )} text-sm`}>
                         {formatMinutes(userData.outreachMinutes)}
                       </Badge>
-                      {canManage && <EditUserDialog userData={userData} />}
+                      {canManage && (
+                        <AdjustHoursDialog
+                          userData={userData}
+                          onAdjusted={onReloadAction}
+                        />
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -240,6 +256,17 @@ export function OutreachTable({
               </div>
             </div>
           )}
+          {!isLoading && hasMore && (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadMore}
+                disabled={isLoadingMore || !onLoadMoreAction}>
+                {isLoadingMore ? "Loading..." : "Load more"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -248,6 +275,20 @@ export function OutreachTable({
   // Desktop Table Layout (enable horizontal scroll to avoid clipped cells)
   return (
     <div className="relative w-full h-full overflow-x-auto">
+      <div className="flex items-center justify-between py-2 text-sm text-muted-foreground">
+        <span>
+          Showing {hasUsers ? sortedUsers.length : 0} of {totalItems} members
+        </span>
+        {hasMore && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLoadMore}
+            disabled={isLoadingMore || !onLoadMoreAction}>
+            {isLoadingMore ? "Loading..." : "Load more"}
+          </Button>
+        )}
+      </div>
       <Table className="w-full min-w-[780px]">
         <TableHeader>
           <TableRow>
@@ -272,10 +313,13 @@ export function OutreachTable({
                 }}>
                 <div className="flex items-center justify-baseline gap-5">
                   <span>
-                    {head.name}{" "}
-                    <span className="text-muted-foreground">
-                      {eval(head.info || "")}
-                    </span>
+                    {head.name}
+                    {head.key === "user" && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        ({totalItems})
+                      </span>
+                    )}
                   </span>
                   <div className="w-20">
                     {sortConfig.key === head.key && (
@@ -306,7 +350,7 @@ export function OutreachTable({
                 </div>
               </TableCell>
             </TableRow>
-          ) : allUsers.length === 0 ? (
+          ) : users.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={canManage ? 5 : 4}
@@ -356,9 +400,9 @@ export function OutreachTable({
                 </TableCell>
                 {canManage && (
                   <TableCell>
-                    <EditUserDialog
+                    <AdjustHoursDialog
                       userData={userData}
-                      refreshFunc={refetchData}
+                      onAdjusted={onReloadAction}
                     />
                   </TableCell>
                 )}
@@ -379,6 +423,16 @@ export function OutreachTable({
           )}
         </TableBody>
       </Table>
+      {!isLoading && hasMore && (
+        <div className="flex justify-center py-4">
+          <Button
+            variant="outline"
+            onClick={handleLoadMore}
+            disabled={isLoadingMore || !onLoadMoreAction}>
+            {isLoadingMore ? "Loading..." : "Load more"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

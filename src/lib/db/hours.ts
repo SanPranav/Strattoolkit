@@ -2,13 +2,15 @@ import type { OutreachEvent, OutreachSession } from "@/lib/types/pocketbase";
 import { type PBClientBase } from "../pb";
 
 import { BaseStates } from "../states";
+import { logger } from "../logger";
 
 let ManualHoursEventID = "";
 
 export async function manualModifyOutreachHours(
   userId: string,
   deltaMinutes: number,
-  client: PBClientBase
+  client: PBClientBase,
+  reason?: string
 ) {
   if (!ManualHoursEventID) {
     const [lookupError, manualHoursEvent] =
@@ -22,10 +24,12 @@ export async function manualModifyOutreachHours(
     }
 
     if (!manualHoursEvent) {
-      const [createError, createdEvent] =
-        await client.createOne<OutreachEvent>("OutreachEvents", {
+      const [createError, createdEvent] = await client.createOne<OutreachEvent>(
+        "OutreachEvents",
+        {
           name: "ManualHours"
-        });
+        }
+      );
 
       if (createError || !createdEvent) {
         return BaseStates.ERROR;
@@ -67,6 +71,15 @@ export async function manualModifyOutreachHours(
   } else if (sessionError) {
     return BaseStates.ERROR;
   }
+
+  logger.info(
+    {
+      userId,
+      deltaMinutes,
+      reason
+    },
+    "Manual outreach hours adjusted"
+  );
 
   return BaseStates.SUCCESS;
 }
