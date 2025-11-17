@@ -6,6 +6,7 @@ import { getOutreachMinutesCutoff } from "@/lib/db/outreach";
 import { PBServer } from "@/lib/pb";
 import { getUserData } from "@/lib/db/user";
 import Loader from "@/components/Loader";
+import ServerToaster from "@/components/ServerToaster";
 
 export default async function ServerDataFetcher() {
   const pb = await PBServer.getInstance();
@@ -16,14 +17,15 @@ export default async function ServerDataFetcher() {
   );
   const userRole = getUserRole(pb) || "guest";
 
-  if (error && error !== "01x02") {
-    console.error("Error fetching user data");
-    return <Loader />;
-  }
-  
-  if (!userData?.expand?.user?.id) {
-    console.error("Error fetching user data");
-    return <Loader />;
+  if (!userData?.expand?.user?.id || error) {
+    return (
+      <ServerToaster
+        {...{
+          message: `Error: '${error}'. Please try again later.`,
+          type: "error"
+        }}
+      />
+    );
   }
 
   const outreachMinutesCutoff = await getOutreachMinutesCutoff(pb);
