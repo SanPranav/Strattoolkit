@@ -17,7 +17,7 @@ export default async function ServerDataFetcher() {
   );
   const userRole = getUserRole(pb) || "guest";
 
-  if (!userData?.expand?.user?.id || error) {
+  if (!userData?.expand?.user?.id) {
     return (
       <ServerToaster
         {...{
