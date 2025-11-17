@@ -75,8 +75,8 @@ export async function getUserData(
 ): Promise<[ErrorCodes, null] | [null, UserData]> {
   const [error, data] = await client.getFirstListItem<UserData>(
     "UserData",
-    `user='${userId.replace(/'/g, "\\'")}'`,
-    { expand: "user" }
+    `user='${userId}'`,
+    { expand: "user", requestKey: null }
   );
   if (error) {
     return [error, null];

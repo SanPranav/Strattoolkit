@@ -76,7 +76,6 @@ export class PBClientBase {
       ret = await cb();
     } catch (error) {
       let code: ErrorCodes = "01x01";
-      logger.error({ err: error }, "PocketBase operation failed");
       if (!(error instanceof ClientResponseError)) {
         return [code, null];
       }
@@ -85,13 +84,12 @@ export class PBClientBase {
         code = "01x02";
       } else {
         code = `01x${error.status}` as any;
-        console.error(
-          "PocketBase Error:",
-          code,
-          ErrorToString[code],
-          error.data
-        );
       }
+
+      logger.error(
+        { err: error, code, code_msg: ErrorToString[code] },
+        "PocketBase operation failed"
+      );
 
       return [code, null];
     }
