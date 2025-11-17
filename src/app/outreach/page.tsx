@@ -1,12 +1,11 @@
-import { redirect } from "next/navigation";
-
 import OutreachPage from "./OutreachPage";
 import { getUserRole, hasPermission } from "@/lib/permissions";
 import { getOutreachMinutesCutoff } from "@/lib/db/outreach";
 import { PBServer } from "@/lib/pb";
 import { getUserData } from "@/lib/db/user";
-import Loader from "@/components/Loader";
 import ServerToaster from "@/components/ServerToaster";
+
+export const dynamic = "force-dynamic";
 
 export default async function ServerDataFetcher() {
   const pb = await PBServer.getInstance();
