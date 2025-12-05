@@ -30,6 +30,8 @@ type OutreachTableProps = {
   outreachMinutesCutoff: number;
   isMobile?: boolean;
   refetchData?: () => void; // Function to refetch data after edits
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 };
 
 type SortKey = "user" | "outreachMinutes" | "lastOutreachEvent";
@@ -144,7 +146,9 @@ export function OutreachTable({
   isLoadingMore,
   outreachMinutesCutoff,
   isMobile = false,
-  refetchData
+  refetchData,
+  onLoadMore,
+  hasMore
 }: OutreachTableProps) {
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "user",
@@ -158,6 +162,13 @@ export function OutreachTable({
   useEffect(() => {
     setSortedUsers(sortUsersList(allUsers, sortConfig));
   }, [allUsers, sortConfig]);
+
+  // Recursive loading to fetch all data
+  useEffect(() => {
+    if (hasMore && !isLoadingMore && onLoadMore) {
+      onLoadMore();
+    }
+  }, [hasMore, isLoadingMore, onLoadMore]);
 
   // Mobile Card Layout (avoid nested scroll; parent provides vertical scrolling)
   if (isMobile) {
@@ -283,124 +294,122 @@ export function OutreachTable({
 
   // Desktop Table Layout (enable horizontal scroll to avoid clipped cells)
   return (
-    <div className="relative w-full h-full overflow-x-auto">
-      <Table className="w-full min-w-[780px]">
-        <TableHeader>
-          <TableRow>
-            {SortedTableHeads.map((head) => (
-              <TableHead
-                key={head.key}
-                className={`cursor-pointer relative ${
-                  head.key === "user"
-                    ? "min-w-[18rem]"
-                    : head.key === "outreachMinutes"
-                    ? "min-w-[10rem]"
-                    : "min-w-[12rem]"
-                }`}
-                onClick={() => {
-                  setSortConfig((prev) => {
-                    const newDirection =
-                      prev.key === head.key && prev.direction === "ascending"
-                        ? "descending"
-                        : "ascending";
-                    return { key: head.key, direction: newDirection };
-                  });
-                }}>
-                <div className="flex items-center justify-baseline gap-5">
-                  <span>
-                    {head.name}
-                    {head.key === "user" && (
-                      <span className="text-muted-foreground">
-                        {" "}
-                        ({allUsers.length})
-                      </span>
-                    )}
-                  </span>
-                  <div className="w-20">
-                    {sortConfig.key === head.key && (
-                      <Badge className="text-xs">
-                        {sortConfig.direction === "ascending"
-                          ? head.ascending
-                          : head.descending}
-                      </Badge>
-                    )}
+    <div className="relative w-full h-full flex flex-col">
+      <div className="overflow-x-auto">
+        <Table className="w-full min-w-[780px]">
+          <TableHeader>
+            <TableRow>
+              {SortedTableHeads.map((head) => (
+                <TableHead
+                  key={head.key}
+                  className={`cursor-pointer relative ${
+                    head.key === "user"
+                      ? "min-w-[18rem]"
+                      : head.key === "outreachMinutes"
+                      ? "min-w-[10rem]"
+                      : "min-w-[12rem]"
+                  }`}
+                  onClick={() => {
+                    setSortConfig((prev) => {
+                      const newDirection =
+                        prev.key === head.key && prev.direction === "ascending"
+                          ? "descending"
+                          : "ascending";
+                      return { key: head.key, direction: newDirection };
+                    });
+                  }}>
+                  <div className="flex items-center justify-baseline gap-5">
+                    <span>
+                      {head.name}
+                      {head.key === "user" && (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          ({allUsers.length})
+                        </span>
+                      )}
+                    </span>
+                    <div className="w-20">
+                      {sortConfig.key === head.key && (
+                        <Badge className="text-xs">
+                          {sortConfig.direction === "ascending"
+                            ? head.ascending
+                            : head.descending}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </TableHead>
-            ))}
-            {canManage && (
-              <TableHead className="min-w-[8rem]">Manage</TableHead>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell
-                colSpan={canManage ? 5 : 4}
-                className="text-center py-8">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  Loading...
-                </div>
-              </TableCell>
+                </TableHead>
+              ))}
+              {canManage && (
+                <TableHead className="min-w-[8rem]">Manage</TableHead>
+              )}
             </TableRow>
-          ) : allUsers.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={canManage ? 5 : 4}
-                className="text-center py-8">
-                No user data found
-              </TableCell>
-            </TableRow>
-          ) : (
-            sortedUsers.map((userData) => (
-              <TableRow key={userData.user}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <UserInfo user={userData} withoutEmail={true} />
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={canManage ? 5 : 4}
+                  className="text-center py-8">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Loading...
                   </div>
                 </TableCell>
-                <TableCell>
-                  <Badge
-                    className={`${getBadgeStatusStyles(
-                      userData.outreach_minutes ?? 0,
-                      outreachMinutesCutoff,
-                      outreachMinutesCutoff - 60 * 3
-                    )} text-sm md:text-base`}>
-                    {formatMinutes(userData.outreach_minutes ?? 0)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {formatPbDate(
-                    getLastOutreachDate(userData as ExtendedUserData) ?? ""
-                  ) || "N/A"}
-                </TableCell>
-                {canManage && (
-                  <TableCell>
-                    <EditUserDialog
-                      userData={userData}
-                      refreshFunc={refetchData}
-                    />
-                  </TableCell>
-                )}
               </TableRow>
-            ))
-          )}
-          {isLoadingMore && (
-            <TableRow>
-              <TableCell
-                colSpan={canManage ? 5 : 4}
-                className="text-center py-4">
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  Loading more...
-                </div>
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ) : allUsers.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={canManage ? 5 : 4}
+                  className="text-center py-8">
+                  No user data found
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedUsers.map((userData) => (
+                <TableRow key={userData.user}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <UserInfo user={userData} withoutEmail={true} />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      className={`${getBadgeStatusStyles(
+                        userData.outreach_minutes ?? 0,
+                        outreachMinutesCutoff,
+                        outreachMinutesCutoff - 60 * 3
+                      )} text-sm md:text-base`}>
+                      {formatMinutes(userData.outreach_minutes ?? 0)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {formatPbDate(
+                      getLastOutreachDate(userData as ExtendedUserData) ?? ""
+                    ) || "N/A"}
+                  </TableCell>
+                  {canManage && (
+                    <TableCell>
+                      <EditUserDialog
+                        userData={userData}
+                        refreshFunc={refetchData}
+                      />
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      {isLoadingMore && (
+        <div className="flex justify-center py-4">
+          <div className="flex items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+            Loading more...
+          </div>
+        </div>
+      )}
     </div>
   );
 }

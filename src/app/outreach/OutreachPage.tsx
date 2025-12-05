@@ -285,6 +285,8 @@ export default function OutreachPage({ outreachMinutesCutoff }: Props) {
           outreachMinutesCutoff={outreachMinutesCutoff}
           isMobile={isMobile}
           refetchData={refetchData}
+          onLoadMore={loadMore}
+          hasMore={hasMore}
         />
       </div>
     </div>

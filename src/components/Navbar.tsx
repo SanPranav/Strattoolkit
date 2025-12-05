@@ -74,7 +74,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: <SearchCode className="h-5 w-5" />,
     label: "Scouting",
     url: "/scouting",
-    msg: "Lets go scout!"
+    msg: "Lets go scout!",
+    func: () => {
+      toast.warning("Under Construction");
+      return false;
+    }
   },
   {
     icon: <Clock className="h-5 w-5" />,
@@ -139,7 +143,7 @@ export default function Navbar({}) {
     if (!func()) return;
 
     toast(`${msg}`);
-    router.push(url);
+    router.replace(url);
   };
 
   if (state.isDisabled) return;
