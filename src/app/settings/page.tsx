@@ -20,7 +20,7 @@ import type { FeatureFlags, FullUserData } from "@/lib/types/db";
 import type { Tables } from "@/lib/types/supabase";
 import UserAvatar from "@/components/UserAvatar";
 import { useUser } from "@/hooks/useUser";
-import { getSBBrowserClient } from "@/lib/db/supabase/sbClient";
+import { getSBBrowserClient } from "@/lib/supabase/sbClient";
 import { useIsMounted } from "@/hooks/useIsHydrated";
 import { useNavbar } from "@/hooks/useNavbar";
 

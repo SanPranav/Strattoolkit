@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getSBBrowserClient } from "@/lib/db/supabase/sbClient";
+import { getSBBrowserClient } from "@/lib/supabase/sbClient";
 
 import type { FullUserData, User } from "@/lib/types/db";
 import { getUserDataByUserId } from "@/lib/db/user";

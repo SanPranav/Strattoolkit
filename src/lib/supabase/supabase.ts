@@ -1,7 +1,7 @@
 import { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { getSBBrowserClient } from "./sbClient";
-import { logger } from "../../logger";
-import type { User } from "../../types/db";
+import { logger } from "../logger";
+import type { User } from "../types/db";
 
 type SBRequestCallback<T, U extends PostgrestSingleResponse<T>> = (
   sb: ReturnType<typeof getSBBrowserClient>

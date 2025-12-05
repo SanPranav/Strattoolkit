@@ -1,6 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@/lib/types/supabase";
-import { assertEnv } from "../../utils";
+import { assertEnv } from "../utils";
 
 export function getSBBrowserClient() {
   const url = assertEnv(

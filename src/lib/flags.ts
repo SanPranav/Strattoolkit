@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/types/supabase";
 
 import { EvalRet, FeatureFlag, FlagNames, FlagParams } from "./types/flags";
-import { getSBBrowserClient } from "./db/supabase/sbClient";
+import { getSBBrowserClient } from "./supabase/sbClient";
 import { logger } from "./logger";
 
 type FeatureFlagRow = Database["public"]["Tables"]["FeatureFlags"]["Row"];

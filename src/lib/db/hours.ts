@@ -1,4 +1,4 @@
-import { makeSBRequest } from "./supabase/supabase";
+import { makeSBRequest } from "../supabase/supabase";
 import { BaseStates } from "@/lib/types/states";
 
 export async function manualModifyOutreachHours(

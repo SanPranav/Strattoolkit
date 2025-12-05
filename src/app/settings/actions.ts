@@ -11,8 +11,8 @@ import {
   updateFlagPayloadSchema,
   type UpdateFlagPayload
 } from "./flag-schemas";
-import { getSBBrowserClient } from "@/lib/db/supabase/sbClient";
-import { makeSBRequest } from "@/lib/db/supabase/supabase";
+import { getSBBrowserClient } from "@/lib/supabase/sbClient";
+import { makeSBRequest } from "@/lib/supabase/supabase";
 
 export type UpdateFlagActionResult =
   | { success: true; flag: FeatureFlags }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useIsMounted } from "@/hooks/useIsHydrated";
 import { useNavbar } from "@/hooks/useNavbar";
-import { loginOAuth, signupEmailPass } from "@/lib/auth";
+import { loginOAuth, signupEmailPass } from "@/lib/supabase/auth";
 import { BaseStates, SignupStates, stateToMessage } from "@/lib/types/states";
 import { logger } from "@/lib/logger";
 

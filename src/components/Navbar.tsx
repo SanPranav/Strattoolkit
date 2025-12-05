@@ -9,7 +9,7 @@ import { useUser } from "@/hooks/useUser";
 import { useIsMounted } from "@/hooks/useIsHydrated";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavbar } from "@/hooks/useNavbar";
-import { logout } from "@/lib/auth";
+import { logout } from "@/lib/supabase/auth";
 
 import {
   User as UserIcon,
@@ -33,7 +33,7 @@ import {
 
 import { Separator } from "@/components/ui/separator";
 import type { FullUserData, User } from "@/lib/types/db";
-import { getProfileImageUrl } from "@/lib/db/supabase/supabase";
+import { getProfileImageUrl } from "@/lib/supabase/supabase";
 
 type NavItem = {
   showInMinimal?: boolean;

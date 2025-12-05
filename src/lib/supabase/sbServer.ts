@@ -1,5 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
-import { assertEnv } from "../../utils";
+import { assertEnv } from "../utils";
 
 type CookieStore = Parameters<typeof createServerClient>[2]["cookies"];
 

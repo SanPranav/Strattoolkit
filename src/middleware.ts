@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
 
 import { hasPermission } from "./lib/permissions";
 import { runFlag } from "./lib/flags";
-import { getSBServerClient } from "./lib/db/supabase/sbServer";
+import { getSBServerClient } from "./lib/supabase/sbServer";
 import { UserData } from "./lib/types/db";
 import { createServerClient } from "@supabase/ssr";
 
@@ -126,12 +126,13 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - auth (authentication pages)
+     * - info (information pages)
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - auth (authentication pages)
-     * - api (API routes)
+     * - static assets (e.g., favicon)
      */
-    "/((?!_next/static|_next/image|favicon.ico|auth|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
+    "/((?!_next/static|_next/image|favicon.ico|api|auth|info|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
   ]
-};
+} satisfies MiddlewareConfig;

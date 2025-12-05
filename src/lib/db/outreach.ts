@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSBBrowserClient } from "./supabase/sbClient";
-import { makeSBRequest } from "./supabase/supabase";
+import { getSBBrowserClient } from "../supabase/sbClient";
+import { makeSBRequest } from "../supabase/supabase";
 import type { OutreachEvent, OutreachSession } from "../types/db";
 import { cache } from "react";
 import { runFlag } from "../flags";

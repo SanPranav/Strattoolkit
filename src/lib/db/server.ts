@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { getSBServerClient } from "./supabase/sbServer";
+import { getSBServerClient } from "../supabase/sbServer";
 
 import type { UserData } from "../types/db";
 
