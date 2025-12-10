@@ -1,10 +1,36 @@
 "use server";
 
+import posthog from "posthog-js";
+
+import { UserData } from "./types/db";
+
+export async function getDisabledPages(role: UserData["role"]) {
+  const payload = (await posthog.getFeatureFlagPayload(
+    "disabled_pages"
+  )) as DisabledPagesFlag;
+
+  if (!payload) {
+    return false;
+  }
+
+  if (role in payload) {
+    return payload[role];
+  }
+
+  return false;
+}
+
 import murmur from "murmurhash";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/types/supabase";
 
-import { EvalRet, FeatureFlag, FlagNames, FlagParams } from "./types/flags";
+import {
+  DisabledPagesFlag,
+  EvalRet,
+  FeatureFlag,
+  FlagNames,
+  FlagParams
+} from "./types/flags";
 import { getSBBrowserClient } from "./supabase/sbClient";
 import { logger } from "./logger";
 

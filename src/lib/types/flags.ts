@@ -1,3 +1,9 @@
+import { UserData } from "./db";
+
+export type DisabledPagesFlag = {
+  [key in UserData["role"]]: string[];
+};
+
 export const FLAG_NAME_VALUES = [
   "advanced_reporting",
   "disabled_pages",
