@@ -4,9 +4,10 @@
     "builder": "RAILPACK",
     "nixpacksPlan": {
       "phases": {
-        "install": [
-          "bun install"
-        ]
+        "install": {
+          "dependsOn": ["setup"],
+          "cmds": ["bun install"]
+        }
       }
     }
   }
