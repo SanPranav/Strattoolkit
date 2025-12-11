@@ -16,7 +16,8 @@ import {
   Clock,
   Menu,
   SearchCode,
-  LogOut
+  LogOut,
+  BookOpen
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,12 @@ const NAV_ITEMS: NavItem[] = [
     msg: ""
   },
   {
+    icon: <BookOpen className="h-5 w-5" />,
+    label: "Kickoff Guide",
+    url: "/info/kickoff-guide",
+    msg: "Opening Kickoff Guide"
+  },
+  {
     icon: <SearchCode className="h-5 w-5" />,
     label: "Scouting",
     url: "/scouting",
@@ -116,7 +123,7 @@ type ChildProps = {
   onNavigate: (url: { url: string; msg?: string }) => void;
 } & ReturnType<typeof useNavbar>;
 
-export default function Navbar({}) {
+export default function Navbar({ }) {
   const router = useRouter();
 
   const { isSmallScreen, hasTouch } = useIsMobile(true);
@@ -349,9 +356,8 @@ function Desktop({
     <div
       ref={navbarRef}
       data-navbar-root
-      className={`fixed top-2 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ease-in-out w-max ${
-        isVisible ? "translate-y-0" : "-translate-y-full"
-      }`}>
+      className={`fixed top-2 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-300 ease-in-out w-max ${isVisible ? "translate-y-0" : "-translate-y-full"
+        }`}>
       <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl shadow-2xl px-6 py-3 transition-all duration-300 ease-in-out">
         <div className="flex items-center justify-between space-x-8 transition-all duration-300 ease-in-out">
           <nav className="flex items-center space-x-2 transition-all duration-300 ease-in-out">
