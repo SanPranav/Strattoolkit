@@ -11,6 +11,8 @@ export async function middleware(request: NextRequest) {
   const originalPath = request.nextUrl.pathname;
   const segments = originalPath.split("/").filter(Boolean);
 
+  logger.debug({ request }, "[Middleware] Processing request");
+
   if (originalPath.startsWith("/ph")) {
     return posthogMiddleware(request);
   }

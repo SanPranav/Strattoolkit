@@ -13,10 +13,6 @@ function validateName(value: string) {
   return re.test(String(value));
 }
 
-function maskEmail(email: string) {
-  return email.replace(/(^.).*(@.*$)/, "$1***$2");
-}
-
 export async function loginEmailPass(
   email: string,
   password: string
@@ -34,9 +30,8 @@ export async function loginEmailPass(
   }
 
   const supabase = getSBBrowserClient();
-  const maskedEmail = maskEmail(trimmedEmail);
 
-  logger.debug({ email: maskedEmail }, "[Auth] Attempting password login");
+  logger.debug({ email }, "[Auth] Attempting password login");
 
   const { error }: { error: Partial<AuthApiError> | null } =
     await supabase.auth.signInWithPassword({
@@ -45,16 +40,16 @@ export async function loginEmailPass(
     });
 
   if (error?.code === "invalid_credentials") {
-    logger.debug({ email: maskedEmail }, "[Auth] Invalid credentials");
+    logger.debug({ email }, "[Auth] Invalid credentials");
     return LoginStates.ERR_INCORRECT_PASSWORD;
   }
 
   if (error) {
-    logger.error({ email: maskedEmail, err: error }, "[Auth] Login failed");
+    logger.error({ email, err: error }, "[Auth] Login failed");
     return LoginStates.ERR_UNKNOWN;
   }
 
-  logger.debug({ email: maskedEmail }, "[Auth] Password login succeeded");
+  logger.debug({ email }, "[Auth] Password login succeeded");
 
   return LoginStates.SUCCESS;
 }
@@ -118,9 +113,8 @@ export async function signupEmailPass(
   }
 
   const supabase = getSBBrowserClient();
-  const maskedEmail = maskEmail(trimmedEmail);
 
-  logger.debug({ email: maskedEmail }, "[Auth] Attempting signup");
+  logger.debug({ email }, "[Auth] Attempting signup");
 
   const { error } = await supabase.auth.signUp({
     email: trimmedEmail,
@@ -144,7 +138,7 @@ export async function signupEmailPass(
     return SignupStates.ERR_UNKNOWN;
   }
 
-  logger.debug({ email: maskedEmail }, "[Auth] Signup succeeded");
+  logger.debug({ email }, "[Auth] Signup succeeded");
 
   const loginResult = await loginEmailPass(trimmedEmail, password1);
   if (loginResult === LoginStates.SUCCESS) {

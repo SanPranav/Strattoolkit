@@ -20,6 +20,6 @@ export const logger: Logger = pino({
       ignore: "pid,hostname"
     }
   },
-  level: process.env.PINO_LOG_LEVEL || "info",
-  redact: ["password", "creditCardNumber"]
+  level: process.env.PINO_LOG_LEVEL || "debug",
+  redact: ["password", "email"]
 });
