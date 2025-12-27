@@ -27,7 +27,7 @@ import { safeParseSearchParams } from "@/lib/utils";
 
 export default function LoginForm() {
   const router = useRouter();
-  const { doMinimalRendering, setDefaultExpanded } = useNavbar();
+  const { setVariant, setDefaultExpanded, resetNavbar } = useNavbar();
   const isHydrated = useIsMounted();
 
   const [redirectRoute, setRedirectRoute] = useState("/");
@@ -53,7 +53,7 @@ export default function LoginForm() {
 
     const state = await loginOAuth(
       type,
-      new URL(redirectRoute, window.location.origin)
+      new URL(redirectRoute, process.env.NEXT_PUBLIC_APP_URL!)
     );
 
     switch (state) {
@@ -104,14 +104,13 @@ export default function LoginForm() {
   );
 
   useEffect(() => {
-    doMinimalRendering(true);
+    setVariant("minimal");
     setDefaultExpanded(false);
 
     return () => {
-      doMinimalRendering(false);
-      setDefaultExpanded(true);
+      resetNavbar();
     };
-  }, [setDefaultExpanded, doMinimalRendering]);
+  }, [setDefaultExpanded, setVariant, resetNavbar]);
 
   return (
     <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">

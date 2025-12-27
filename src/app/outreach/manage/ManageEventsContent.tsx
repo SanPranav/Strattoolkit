@@ -1,9 +1,16 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import useSWR from "swr";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchEvents, fetchSessionsForEvent } from "@/lib/db/outreach";
+import {
+  fetchOutreachEvents,
+  fetchOutreachEventSessions
+} from "@/lib/db/outreach";
+import {
+  fetchActivitySessionsByEventId,
+  fetchTotalActivityMinutes
+} from "@/lib/db/activity";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -13,7 +20,11 @@ import EventsList from "./EventsList";
 import EventDetails from "./EventDetails";
 
 import { Calendar } from "lucide-react";
-import type { OutreachEvent, OutreachSession } from "@/lib/types/db";
+import type { ActivityEvent, ActivitySession } from "@/lib/types/db";
+import { formatMinutes } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { formatDateTimeLA } from "@/lib/datetime";
+import { OUTREACH } from "@/lib/types/queryKeys";
 
 type ManageEventsContentProps = {
   variant?: "page" | "sheet";
@@ -24,13 +35,16 @@ export default function ManageEventsContent({
 }: ManageEventsContentProps) {
   const isMobile = useIsMobile();
   const isSheet = variant === "sheet";
+  const queryClient = useQueryClient();
 
-  const [selectedEvent, setSelectedEvent] = useState<OutreachEvent | null>(
+  const [selectedEvent, setSelectedEvent] = useState<ActivityEvent | null>(
     null
   );
 
-  const eventsFetcher = useCallback(async (): Promise<OutreachEvent[]> => {
-    const [error, data] = await fetchEvents();
+  const [eventSearch, setEventSearch] = useState("");
+
+  const eventsFetcher = useCallback(async (): Promise<ActivityEvent[]> => {
+    const [error, data] = await fetchOutreachEvents();
 
     if (error || !data) {
       throw new Error(error ?? "Failed to load events");
@@ -40,15 +54,30 @@ export default function ManageEventsContent({
   }, []);
 
   const {
-    data: events,
+    data: events = [],
     error: eventsError,
-    mutate: mutateEvents
-  } = useSWR("outreach-events", eventsFetcher);
+    isLoading: isLoadingEvents
+  } = useQuery<ActivityEvent[], Error>({
+    queryKey: OUTREACH.EVENTS,
+    queryFn: eventsFetcher
+  });
 
-  const sessionsFetcher = useCallback(async (): Promise<OutreachSession[]> => {
-    if (!selectedEvent?.name) return [];
+  const { data: totalOutreachMinutesAllUsers = 0 } = useQuery<number>({
+    queryKey: OUTREACH.TOTAL_MINUTES,
+    queryFn: async () => {
+      const [error, total] = await fetchTotalActivityMinutes(["outreach"]);
+      if (error || total === null) {
+        throw new Error(error ?? "Failed to load total outreach minutes");
+      }
+      return total;
+    },
+    staleTime: 60_000
+  });
 
-    const [error, data] = await fetchSessionsForEvent(selectedEvent.name);
+  const sessionsFetcher = useCallback(async (): Promise<ActivitySession[]> => {
+    if (!selectedEvent?.event_name) return [];
+
+    const [error, data] = await fetchOutreachEventSessions(selectedEvent.id);
 
     if (error || !data) {
       throw new Error(error ?? "Failed to load sessions");
@@ -57,26 +86,69 @@ export default function ManageEventsContent({
     return data;
   }, [selectedEvent]);
 
-  const { data: sessions, mutate: mutateSessions } = useSWR(
-    selectedEvent ? `outreach-sessions-${selectedEvent.id}` : null,
-    sessionsFetcher
-  );
+  const { data: sessions = [] } = useQuery<ActivitySession[]>({
+    queryKey: [...OUTREACH.EVENT_SESSIONS(selectedEvent?.id ?? 0)],
+    queryFn: sessionsFetcher,
+    enabled: Boolean(selectedEvent?.id),
+    staleTime: 30_000
+  });
 
-  const handleEventCreated = useCallback(() => mutateEvents(), [mutateEvents]);
-  const handleHoursLogged = useCallback(
-    () => mutateSessions(),
-    [mutateSessions]
-  );
-  const handleSessionDeleted = useCallback(
-    () => mutateSessions(),
-    [mutateSessions]
-  );
+  const { data: eventSessions = [] } = useQuery({
+    queryKey: [
+      ...OUTREACH.EVENT_SUMMARY(selectedEvent?.id ?? 0),
+      selectedEvent?.event_name
+    ],
+    queryFn: async () => {
+      if (!selectedEvent?.id) return [];
+      const [, data] = await fetchActivitySessionsByEventId(selectedEvent.id);
+      return data;
+    },
+    enabled: Boolean(selectedEvent?.id)
+  });
+
+  const totals = useMemo(() => {
+    if (!eventSessions?.length) return { raw: 0, credited: 0 };
+    return eventSessions.reduce(
+      (acc, row) => {
+        acc.raw += row.minutes ?? 0;
+        acc.credited +=
+          Math.min(row.minutes, selectedEvent?.minutes_cap ?? Infinity) ?? 0;
+        return acc;
+      },
+      { raw: 0, credited: 0 }
+    );
+  }, [eventSessions, selectedEvent?.minutes_cap]);
+
+  const handleEventCreated = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: OUTREACH.EVENTS });
+  }, [queryClient]);
+
+  const invalidateCurrentEventData = useCallback(() => {
+    if (!selectedEvent?.id) return;
+    void queryClient.invalidateQueries({
+      queryKey: OUTREACH.EVENT_SESSIONS(selectedEvent.id)
+    });
+    void queryClient.invalidateQueries({
+      queryKey: OUTREACH.EVENT_SUMMARY(selectedEvent.id)
+    });
+  }, [queryClient, selectedEvent?.id]);
+
+  const handleHoursLogged = useCallback(() => {
+    invalidateCurrentEventData();
+  }, [invalidateCurrentEventData]);
+
+  const handleSessionDeleted = useCallback(() => {
+    invalidateCurrentEventData();
+  }, [invalidateCurrentEventData]);
+
   const handleEventDeleted = useCallback(() => {
-    mutateEvents();
+    void queryClient.invalidateQueries({
+      queryKey: OUTREACH.EVENTS
+    });
     setSelectedEvent(null);
-  }, [mutateEvents]);
+  }, [queryClient]);
 
-  const handleEventSelect = useCallback((event: OutreachEvent) => {
+  const handleEventSelect = useCallback((event: ActivityEvent) => {
     setSelectedEvent(event);
   }, []);
 
@@ -87,6 +159,19 @@ export default function ManageEventsContent({
 
     return `grid lg:grid-cols-2 gap-5 ${isMobile ? "grid-cols-1 mb-20" : ""}`;
   }, [isSheet, isMobile]);
+
+  const filteredEvents = useMemo(() => {
+    const q = eventSearch.trim().toLowerCase();
+    if (!q) return events;
+
+    return events.filter((event) => {
+      const name = (event.event_name ?? "").toLowerCase();
+      const dateStr = event.event_date
+        ? formatDateTimeLA(event.event_date)
+        : "";
+      return name.includes(q) || dateStr.toLowerCase().includes(q);
+    });
+  }, [eventSearch, events]);
 
   if (eventsError) {
     return (
@@ -106,7 +191,9 @@ export default function ManageEventsContent({
   return (
     <div
       className={
-        isSheet ? "flex flex-col gap-5 max-h-[80vh]" : "p-4 flex flex-col"
+        isSheet
+          ? "flex flex-col gap-5 max-h-[80vh]"
+          : "p-4 flex flex-col min-h-[calc(100vh-4rem)]"
       }>
       <div className={isSheet ? "space-y-3" : "mb-6"}>
         <div className="flex items-center justify-between">
@@ -119,6 +206,9 @@ export default function ManageEventsContent({
                 }>
                 Manage Events
               </h2>
+              <Badge variant="secondary" className="ml-2">
+                Total (all users): {formatMinutes(totalOutreachMinutesAllUsers)}
+              </Badge>
             </div>
             <p className="text-muted-foreground text-sm">
               Create events and log outreach sessions.
@@ -128,24 +218,26 @@ export default function ManageEventsContent({
         </div>
       </div>
 
-      {!events ? (
+      {isLoadingEvents ? (
         <div className="flex items-center justify-center py-12">
           <Loader />
         </div>
       ) : (
-        <div className={layoutClassName}>
+        <div className={layoutClassName + " min-h-0"}>
           <EventsList
-            events={events}
+            events={filteredEvents}
             selectedEvent={selectedEvent}
             onEventSelect={handleEventSelect}
             onEventDeleted={handleEventDeleted}
             onHoursLogged={handleHoursLogged}
-            isMobile={isMobile}
             variant={variant}
+            searchValue={eventSearch}
+            onSearchValueChange={setEventSearch}
           />
           <EventDetails
             selectedEvent={selectedEvent}
             sessions={sessions || []}
+            totals={totals}
             onHoursLogged={handleHoursLogged}
             onSessionDeleted={handleSessionDeleted}
             variant={variant}

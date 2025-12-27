@@ -28,7 +28,7 @@ import { safeParseSearchParams } from "@/lib/utils";
 export default function SignupForm() {
   const [redirectRoute, setRedirectRoute] = useState("/");
 
-  const { doMinimalRendering, setDefaultExpanded } = useNavbar();
+  const { setVariant, setDefaultExpanded, resetNavbar } = useNavbar();
   const router = useRouter();
   const isHydrated = useIsMounted();
 
@@ -105,14 +105,13 @@ export default function SignupForm() {
   );
 
   useEffect(() => {
-    doMinimalRendering(true);
+    setVariant("minimal");
     setDefaultExpanded(false);
 
     return () => {
-      doMinimalRendering(false);
-      setDefaultExpanded(true);
+      resetNavbar();
     };
-  }, [setDefaultExpanded, doMinimalRendering]);
+  }, [setDefaultExpanded, setVariant, resetNavbar]);
 
   return (
     <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">

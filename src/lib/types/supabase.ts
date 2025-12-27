@@ -39,6 +39,75 @@ export type Database = {
   };
   public: {
     Tables: {
+      ActivityEvents: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_types"];
+          created_at: string;
+          event_date: string;
+          event_name: string;
+          id: number;
+          minutes_cap: number | null;
+        };
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_types"];
+          created_at?: string;
+          event_date?: string;
+          event_name: string;
+          id?: number;
+          minutes_cap?: number | null;
+        };
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_types"];
+          created_at?: string;
+          event_date?: string;
+          event_name?: string;
+          id?: number;
+          minutes_cap?: number | null;
+        };
+        Relationships: [];
+      };
+      ActivitySessions: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_types"];
+          created_at: string;
+          event_id: number;
+          id: number;
+          minutes: number;
+          user_id: string;
+        };
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_types"];
+          created_at?: string;
+          event_id: number;
+          id?: number;
+          minutes: number;
+          user_id: string;
+        };
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_types"];
+          created_at?: string;
+          event_id?: number;
+          id?: number;
+          minutes?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ActivitySessions_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "ActivityEvents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ActivitySessions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "UserData";
+            referencedColumns: ["user_id"];
+          }
+        ];
+      };
       FeatureFlags: {
         Row: {
           flag: Json;
@@ -46,9 +115,9 @@ export type Database = {
           name: string;
         };
         Insert: {
-          flag?: Json;
+          flag: Json;
           id?: number;
-          name?: string;
+          name: string;
         };
         Update: {
           flag?: Json;
@@ -110,6 +179,36 @@ export type Database = {
           }
         ];
       };
+      rbac: {
+        Row: {
+          action: string;
+          condition: string | null;
+          created_at: string | null;
+          id: number;
+          resource: string;
+          updated_at: string | null;
+          user_role: Database["public"]["Enums"]["user_role"];
+        };
+        Insert: {
+          action: string;
+          condition?: string | null;
+          created_at?: string | null;
+          id?: number;
+          resource: string;
+          updated_at?: string | null;
+          user_role: Database["public"]["Enums"]["user_role"];
+        };
+        Update: {
+          action?: string;
+          condition?: string | null;
+          created_at?: string | null;
+          id?: number;
+          resource?: string;
+          updated_at?: string | null;
+          user_role?: Database["public"]["Enums"]["user_role"];
+        };
+        Relationships: [];
+      };
       Settings: {
         Row: {
           created_at: string;
@@ -136,46 +235,50 @@ export type Database = {
           avatar_url: string | null;
           created_at: string;
           email: string;
-          name: string | null;
-          outreach_events: number;
-          outreach_minutes: number;
-          role: Database["public"]["Enums"]["user_role"];
-          user: string;
+          user_id: string;
+          user_name: string | null;
+          user_role: Database["public"]["Enums"]["user_role"];
         };
         Insert: {
           avatar_url?: string | null;
           created_at?: string;
           email?: string;
-          name?: string | null;
-          outreach_events?: number;
-          outreach_minutes?: number;
-          role?: Database["public"]["Enums"]["user_role"];
-          user: string;
+          user_id: string;
+          user_name?: string | null;
+          user_role?: Database["public"]["Enums"]["user_role"];
         };
         Update: {
           avatar_url?: string | null;
           created_at?: string;
           email?: string;
-          name?: string | null;
-          outreach_events?: number;
-          outreach_minutes?: number;
-          role?: Database["public"]["Enums"]["user_role"];
-          user?: string;
+          user_id?: string;
+          user_name?: string | null;
+          user_role?: Database["public"]["Enums"]["user_role"];
         };
         Relationships: [];
       };
     };
     Views: {
-      [_ in never]: never;
+      UserActivitySummaries: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_types"] | null;
+          minutes: number | null;
+          session_count: number | null;
+          user_credited_minutes: number | null;
+          user_id: string | null;
+          user_name: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
-      refresh_user_outreach_minutes: {
-        Args: { p_user: string };
-        Returns: undefined;
+      get_user_role: {
+        Args: { uid: string };
+        Returns: Database["public"]["Enums"]["user_role"];
       };
-      sync_userdata_from_auth_users: { Args: never; Returns: undefined };
     };
     Enums: {
+      activity_types: "build" | "outreach";
       user_role: "admin" | "member" | "guest";
     };
     CompositeTypes: {
@@ -310,6 +413,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      activity_types: ["build", "outreach"],
       user_role: ["admin", "member", "guest"]
     }
   }

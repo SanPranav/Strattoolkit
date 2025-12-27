@@ -120,3 +120,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Refined scrollbars for popover lists and scroll areas */
+[data-slot="scroll-area-viewport"],
+[data-slot="command-list"] {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar,
+[data-slot="command-list"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb,
+[data-slot="command-list"]::-webkit-scrollbar-thumb {
+  background-color: var(--muted-foreground);
+  border-radius: 9999px;
+}
+
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-track,
+[data-slot="command-list"]::-webkit-scrollbar-track {
+  background-color: transparent;
+}

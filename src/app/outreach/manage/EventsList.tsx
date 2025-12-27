@@ -1,24 +1,27 @@
 import { toast } from "sonner";
-import { deleteEvent } from "@/lib/db/outreach";
+import { deleteOutreachEvents } from "@/lib/db/outreach";
+import { formatDateTimeLA } from "@/lib/datetime";
 
 import { Calendar, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import Loader from "@/components/Loader";
 import LogHoursDialog from "./LogHoursDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { logger } from "@/lib/logger";
-import type { OutreachEvent } from "@/lib/types/db";
+import type { ActivityEvent, OutreachEvent } from "@/lib/types/db";
 
 interface EventsListProps {
-  events: OutreachEvent[] | undefined;
-  selectedEvent: OutreachEvent | null;
-  onEventSelect: (event: OutreachEvent) => void;
+  events: ActivityEvent[] | undefined;
+  selectedEvent: ActivityEvent | null;
+  onEventSelect: (event: ActivityEvent) => void;
   onEventDeleted: () => void;
   onHoursLogged: () => void;
-  isMobile?: boolean;
   variant?: "page" | "sheet";
+  searchValue?: string;
+  onSearchValueChange?: (value: string) => void;
 }
 
 export default function EventsList({
@@ -27,8 +30,9 @@ export default function EventsList({
   onEventSelect,
   onEventDeleted,
   onHoursLogged,
-  isMobile = false,
-  variant = "page"
+  variant = "page",
+  searchValue,
+  onSearchValueChange
 }: EventsListProps) {
   const isSheet = variant === "sheet";
 
@@ -42,7 +46,7 @@ export default function EventsList({
     }
 
     try {
-      const [error] = await deleteEvent(eventId);
+      const [error] = await deleteOutreachEvents(eventId);
 
       if (error) {
         throw new Error(error ?? "Failed to delete event");
@@ -61,10 +65,19 @@ export default function EventsList({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Events
-        </CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Events
+          </CardTitle>
+
+          <Input
+            value={searchValue ?? ""}
+            onChange={(e) => onSearchValueChange?.(e.target.value)}
+            placeholder="Search events..."
+            className="max-w-[260px]"
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className={isSheet ? "max-h-[60vh] pr-3" : "h-full"}>
@@ -90,10 +103,10 @@ export default function EventsList({
                   onClick={() => onEventSelect(event)}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold">{event.name}</h3>
+                      <h3 className="font-semibold">{event.event_name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {event.date
-                          ? new Date(event.date).toLocaleDateString()
+                        {event.event_date
+                          ? formatDateTimeLA(event.event_date)
                           : "N/A"}
                       </p>
                     </div>

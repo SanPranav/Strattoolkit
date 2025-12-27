@@ -11,7 +11,7 @@ const STORAGE_KEY = "navbarTipSeen";
 export default function NavbarTip() {
   const [visible, setVisible] = useState(false);
 
-  const { expanded, isDisabled } = useNavbar();
+  const { expanded, disabled } = useNavbar();
   const isMobile = useIsMobile();
 
   const markSeen = useCallback(() => {
@@ -31,7 +31,7 @@ export default function NavbarTip() {
 
     const hasSeen = window.localStorage.getItem(STORAGE_KEY);
 
-    if (hasSeen || isDisabled) {
+    if (hasSeen || disabled) {
       setVisible(false);
       return;
     }
@@ -43,7 +43,7 @@ export default function NavbarTip() {
       window.clearTimeout(showTimer);
       window.clearTimeout(autoHideTimer);
     };
-  }, [isDisabled, markSeen]);
+  }, [disabled, markSeen]);
 
   useEffect(() => {
     if (!visible) return;
@@ -65,7 +65,11 @@ export default function NavbarTip() {
       tabIndex={0}
       onClick={markSeen}
       onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === "Escape" || event.key === " ") {
+        if (
+          event.key === "Enter" ||
+          event.key === "Escape" ||
+          event.key === " "
+        ) {
           event.preventDefault();
           markSeen();
         }

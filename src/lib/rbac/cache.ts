@@ -1,0 +1,66 @@
+import type { Permission, UserRole } from "../types/rbac";
+
+type CacheEntry = {
+  permissions: Permission[];
+  storedAt: number;
+};
+
+const CACHE_TTL_MS = 60000; // 60 seconds, 1 minute
+
+const permissionsCache = new Map<UserRole, CacheEntry>();
+
+export function getCachedPermissions(role: UserRole): Permission[] | null {
+  const entry = permissionsCache.get(role);
+  if (!entry) return null;
+
+  const age = Date.now() - entry.storedAt;
+  if (age > CACHE_TTL_MS) {
+    permissionsCache.delete(role);
+    return null;
+  }
+
+  return entry.permissions;
+}
+
+export function setCachedPermissions(
+  role: UserRole,
+  rawPermissions: Permission[]
+): void {
+  const permissions: Permission[] = rawPermissions.map((perm) => ({
+    resource: perm.resource,
+    action: perm.action,
+    condition: perm.condition
+  }));
+
+  permissionsCache.set(role, {
+    permissions,
+    storedAt: Date.now()
+  });
+}
+
+export function setFullCachedPermissions(
+  permissions: Partial<
+    Record<
+      UserRole,
+      (Permission & {
+        [key: string]: any;
+      })[]
+    >
+  >
+): void {
+  for (const role in permissions) {
+    setCachedPermissions(role as UserRole, permissions[role as UserRole] ?? []);
+  }
+}
+
+export function invalidateCache(role?: UserRole): void {
+  if (role) {
+    permissionsCache.delete(role);
+  } else {
+    clearCache();
+  }
+}
+
+export function clearCache(): void {
+  permissionsCache.clear();
+}

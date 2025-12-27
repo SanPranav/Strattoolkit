@@ -31,16 +31,11 @@ export async function loginEmailPass(
 
   const supabase = getSBBrowserClient();
 
-  const {
-    error
-  }: {
-    error: Partial<AuthApiError> | null;
-  } = await supabase.auth.signInWithPassword({
-    email: trimmedEmail,
-    password,
-  });
-
-  console.log({ error });
+  const { error }: { error: Partial<AuthApiError> | null } =
+    await supabase.auth.signInWithPassword({
+      email: trimmedEmail,
+      password
+    });
 
   if (error?.code === "invalid_credentials")
     return LoginStates.ERR_INCORRECT_PASSWORD;
@@ -52,14 +47,22 @@ export async function loginEmailPass(
   return LoginStates.SUCCESS;
 }
 
-export async function loginOAuth(provider: "google" | "discord", redirectRoute?: URL): Promise<BaseStates> {
+export async function loginOAuth(
+  provider: "google" | "discord",
+  redirectRoute?: URL
+): Promise<BaseStates> {
   const supabase = getSBBrowserClient();
 
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
       redirectTo: redirectRoute?.toString()
     }
+  });
+
+  console.log({
+    data,
+    error
   });
 
   if (error) {
@@ -109,7 +112,7 @@ export async function signupEmailPass(
 
   const supabase = getSBBrowserClient();
 
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email: trimmedEmail,
     password: password1,
     options: {

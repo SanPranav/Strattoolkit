@@ -1,5 +1,4 @@
 import { clsx, type ClassValue } from "clsx";
-import { ResponseCookies } from "next/dist/compiled/@edge-runtime/cookies";
 import { twMerge } from "tailwind-merge";
 
 export const ShortMonths = {
@@ -36,7 +35,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPbDate(dateString: string): string {
+export function formatDate(dateString: string): string {
   if (!dateString) return "N/A";
   return new Date(dateString).toLocaleDateString("en-US", {
     dateStyle: "long"
@@ -108,4 +107,12 @@ export function safeParseSearchParams(
       return new URLSearchParams(url);
     }
   }
+}
+
+export function sanitizeInternalPath(value?: string) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return undefined;
+  }
+
+  return value;
 }

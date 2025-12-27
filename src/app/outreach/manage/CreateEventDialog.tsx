@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import {
   Dialog,
   DialogContent,
@@ -13,12 +14,13 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 // Data
-import { createEvent } from "@/lib/db/outreach";
+import { createOutreachEvent } from "@/lib/db/outreach";
 // Feedback
 import { toast } from "sonner";
 // Icons
 import { Plus } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { toISOFromPickerDate } from "@/lib/datetime";
 
 interface CreateEventDialogProps {
   onEventCreated: () => void;
@@ -31,21 +33,38 @@ export default function CreateEventDialog({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    date: ""
+    dateISO: "",
+    minutesCap: ""
   });
+
+  const [pickerDate, setPickerDate] = useState<Date | undefined>(undefined);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.date) {
+    if (!formData.name || !formData.dateISO) {
       toast.error("Please fill in all fields");
       return;
     }
 
+    const parsedCap = formData.minutesCap.trim();
+    if (parsedCap) {
+      const capNumber = Number(parsedCap);
+      if (!Number.isFinite(capNumber) || capNumber < 0) {
+        toast.error("Minutes cap must be a non-negative number");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
-      const [error, created] = await createEvent({
-        name: formData.name,
-        date: formData.date
+      const minutes_cap = formData.minutesCap.trim()
+        ? Number(formData.minutesCap.trim())
+        : null;
+
+      const [error, created] = await createOutreachEvent({
+        event_name: formData.name,
+        event_date: formData.dateISO,
+        minutes_cap
       });
 
       if (error || !created) {
@@ -54,7 +73,8 @@ export default function CreateEventDialog({
 
       logger.info({ eventId: created.id }, "Event created via dialog");
       toast.success("Event created successfully");
-      setFormData({ name: "", date: "" });
+      setFormData({ name: "", dateISO: "", minutesCap: "" });
+      setPickerDate(undefined);
       setOpen(false);
       onEventCreated();
     } catch (error) {
@@ -93,15 +113,36 @@ export default function CreateEventDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="date">Event Date</Label>
+            <div className={loading ? "pointer-events-none opacity-60" : ""}>
+              <DateTimePicker
+                value={pickerDate}
+                onChange={(next) => {
+                  setPickerDate(next);
+                  setFormData({
+                    ...formData,
+                    dateISO: next ? toISOFromPickerDate(next) : ""
+                  });
+                }}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="minutes-cap">Minutes Cap (optional)</Label>
             <Input
-              id="date"
-              type="date"
-              value={formData.date}
+              id="minutes-cap"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder="e.g. 120"
+              value={formData.minutesCap}
               onChange={(e) =>
-                setFormData({ ...formData, date: e.target.value })
+                setFormData({ ...formData, minutesCap: e.target.value })
               }
               disabled={loading}
             />
+            <p className="text-xs text-muted-foreground">
+              Leave blank for no cap. Minutes will be credited up to this value
+              per session.
+            </p>
           </div>
           <DialogFooter>
             <Button

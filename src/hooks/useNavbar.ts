@@ -2,13 +2,23 @@
 
 import { useSyncExternalStore } from "react";
 
-let navbarState = {
-  isDisabled: false,
-  renderMinimal: false,
+type NavbarVariant = "full" | "minimal";
+
+type NavbarState = {
+  disabled: boolean;
+  variant: NavbarVariant;
+  defaultExpanded: boolean;
+  expanded: boolean;
+};
+
+const initialState: NavbarState = {
+  disabled: false,
+  variant: "full",
   defaultExpanded: true,
-  mobileNavbarSide: "left",
   expanded: true
 };
+
+let navbarState = initialState;
 
 const listeners = new Set<() => void>();
 
@@ -27,13 +37,13 @@ function getSnapshot() {
   return navbarState;
 }
 
-const setIsDisabled = (value: boolean) => {
-  navbarState = { ...navbarState, isDisabled: value };
+const setDisabled = (value: boolean) => {
+  navbarState = { ...navbarState, disabled: value };
   emitChange();
 };
 
-const doMinimalRendering = (value: boolean) => {
-  navbarState = { ...navbarState, renderMinimal: value };
+const setVariant = (variant: NavbarVariant) => {
+  navbarState = { ...navbarState, variant };
   emitChange();
 };
 
@@ -42,13 +52,18 @@ const setDefaultExpanded = (value: boolean) => {
   emitChange();
 };
 
-const setMobileNavbarSide = (value: "left" | "right") => {
-  navbarState = { ...navbarState, mobileNavbarSide: value };
+const setExpanded = (value: boolean) => {
+  navbarState = { ...navbarState, expanded: value };
   emitChange();
 };
 
-const setExpanded = (value: boolean) => {
-  navbarState = { ...navbarState, expanded: value };
+const configureNavbar = (config: Partial<NavbarState>) => {
+  navbarState = { ...navbarState, ...config };
+  emitChange();
+};
+
+const resetNavbar = (config?: Partial<NavbarState>) => {
+  navbarState = { ...initialState, ...config };
   emitChange();
 };
 
@@ -57,10 +72,11 @@ export function useNavbar() {
 
   return {
     ...state,
-    setIsDisabled,
-    doMinimalRendering,
+    setDisabled,
+    setVariant,
     setDefaultExpanded,
-    setMobileNavbarSide,
-    setExpanded
+    setExpanded,
+    configureNavbar,
+    resetNavbar
   } as const;
 }

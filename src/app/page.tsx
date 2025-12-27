@@ -7,17 +7,14 @@ import { BarChart3, ClipboardList, Users } from "lucide-react";
 
 export const metadata = {
   title: "Optix Toolkit | Team Optix 3749",
-  description: "Streamlining FRC Operations for Team Optix 3749.",
+  description: "Streamlining FRC Operations for Team Optix 3749."
 };
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-background flex flex-col">
-      <NavbarServerConfig setDefaultExpanded={false} />
-      <ServerToaster
-        message="Welcome to the new Optix Toolkit."
-        type="info"
-      />
+      <NavbarServerConfig defaultExpanded={false} />
+      <ServerToaster message="Welcome to the new Optix Toolkit." type="info" />
 
       {/* Hero Section */}
       <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 space-y-8">
@@ -26,12 +23,16 @@ export default function Home() {
             Optix Toolkit
           </h1>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
           <Button asChild size="lg" className="min-w-[150px] text-lg h-12">
             <Link href="/outreach">Outreach</Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="min-w-[150px] text-lg h-12">
+          <Button
+            asChild
+            variant="outline"
+            size="lg"
+            className="min-w-[150px] text-lg h-12">
             <Link href="/scouting">Scouting</Link>
           </Button>
         </div>
@@ -49,7 +50,8 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Track hours, manage events, and monitor member participation effortlessly.
+                Track hours, manage events, and monitor member participation
+                effortlessly.
               </p>
             </CardContent>
           </Card>
@@ -63,7 +65,8 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Real-time data collection and analysis for better match strategy.
+                Real-time data collection and analysis for better match
+                strategy.
               </p>
             </CardContent>
           </Card>
@@ -89,10 +92,14 @@ export default function Home() {
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} Team Optix 3749</p>
           <div className="flex gap-6">
-            <Link href="https://github.com/SlushEE0/otoolkit" className="hover:text-foreground transition-colors">
+            <Link
+              href="https://github.com/SlushEE0/otoolkit"
+              className="hover:text-foreground transition-colors">
               GitHub
             </Link>
-            <Link href="/info/privacy" className="hover:text-foreground transition-colors">
+            <Link
+              href="/info/privacy"
+              className="hover:text-foreground transition-colors">
               Privacy
             </Link>
           </div>

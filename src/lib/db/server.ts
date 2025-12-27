@@ -13,7 +13,7 @@ export async function getUserWithId(
   const { data, error } = await sb
     .from("UserData")
     .select("*")
-    .eq("user", userId)
+    .eq("user_id", userId)
     .limit(1)
     .maybeSingle<UserData>();
 
@@ -32,7 +32,7 @@ export async function getAllUsers(): Promise<
   const { data, error } = await sb
     .from("UserData")
     .select("*")
-    .order("name", { ascending: true });
+    .order("user_name", { ascending: true });
 
   if (error || !data) {
     return [error?.message ?? "Failed to get user", null];

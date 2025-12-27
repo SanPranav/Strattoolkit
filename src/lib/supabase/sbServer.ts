@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { assertEnv } from "../utils";
+import { Database } from "../types/supabase";
 
 type CookieStore = Parameters<typeof createServerClient>[2]["cookies"];
 
@@ -13,7 +14,7 @@ export const getSBServerClient = (cookies: CookieStore) => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  return createServerClient(url, anonKey, {
+  return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll: cookies.getAll,
       setAll: cookies.setAll

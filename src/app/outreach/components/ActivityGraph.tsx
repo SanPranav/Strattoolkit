@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { fetchUserSessionEventDates } from "@/lib/db/outreach";
 import { ShortMonths } from "@/lib/utils";
 
@@ -43,13 +44,6 @@ export default function ActivityGraph({
 }: OutreachActivityGraphProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  const [chartData, setChartData] = useState<ChartData>([]);
-  const [stats, setStats] = useState({
-    totalSessions: 0,
-    avgSessionsPerMonth: 0,
-    peakMonth: ""
-  });
-
   const processTimestamps = function (timestamps: string[]): ChartData {
     const data = { ...PRE_FORMATTED_DATA }; // copy to avoid mutation across calls
     const monthKeys = Object.keys(ShortMonths) as (keyof typeof ShortMonths)[];
@@ -65,51 +59,34 @@ export default function ActivityGraph({
     })) as ChartData;
   };
 
-  useEffect(() => {
-    if (prefetchedDates && prefetchedDates.length) {
-      setChartData(processTimestamps(prefetchedDates));
-      return;
-    }
-
-    let isMounted = true;
-
-    (async () => {
-      const [error, timestamps] = await fetchUserSessionEventDates(id);
-
-      if (!isMounted) return;
-
-      if (error || !timestamps) {
-        setChartData([]);
-        return;
+  const { data: timestamps = [], isLoading } = useQuery<string[]>({
+    queryKey: ["outreach", "userSessionDates", id],
+    queryFn: async () => {
+      const [error, dates] = await fetchUserSessionEventDates(id);
+      if (error) {
+        throw new Error(error);
       }
+      return dates ?? [];
+    },
+    enabled: !prefetchedDates || prefetchedDates.length === 0,
+    initialData:
+      prefetchedDates && prefetchedDates.length ? prefetchedDates : undefined
+  });
 
-      const data = processTimestamps(timestamps);
+  const chartData = useMemo(() => processTimestamps(timestamps), [timestamps]);
 
-      setChartData(data);
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id, prefetchedDates]);
-
-  useEffect(() => {
-    if (chartData.length) {
-      const totalSessions = chartData.reduce(
-        (sum, data) => sum + data.events,
-        0
-      );
-      const avgSessionsPerMonth = Math.round(totalSessions / chartData.length);
-      const peakMonth = chartData.reduce((prev, current) =>
-        current.events > prev.events ? current : prev
-      ).month;
-
-      setStats({
-        totalSessions,
-        avgSessionsPerMonth,
-        peakMonth
-      });
+  const stats = useMemo(() => {
+    if (!chartData.length) {
+      return { totalSessions: 0, avgSessionsPerMonth: 0, peakMonth: "" };
     }
+
+    const totalSessions = chartData.reduce((sum, data) => sum + data.events, 0);
+    const avgSessionsPerMonth = Math.round(totalSessions / chartData.length);
+    const peakMonth = chartData.reduce((prev, current) =>
+      current.events > prev.events ? current : prev
+    ).month;
+
+    return { totalSessions, avgSessionsPerMonth, peakMonth };
   }, [chartData]);
 
   const chartConfig: ChartConfig = {
@@ -125,7 +102,11 @@ export default function ActivityGraph({
         <h3 className="text-sm font-medium">Timeline</h3>
       </div>
       <div className="w-full h-28">
-        {!chartData.length ? (
+        {isLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
+          </div>
+        ) : !chartData.length ? (
           <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
             No activity yet
           </div>

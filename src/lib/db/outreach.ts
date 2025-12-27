@@ -1,21 +1,14 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { getSBBrowserClient } from "../supabase/sbClient";
 import { makeSBRequest } from "../supabase/supabase";
-import type { OutreachEvent, OutreachSession } from "../types/db";
+import type { ActivitySession } from "../types/db";
 import { cache } from "react";
-import { runFlag } from "../flags";
+import { ActivityEvent } from "../types/db";
+import { posthog } from "posthog-js";
 
-type SessionInsert = {
-  userId: string;
-  eventId: string;
-  minutes: number;
-};
-
-export async function fetchEvents(): Promise<
-  [string | null, OutreachEvent[] | null]
+export async function fetchOutreachEvents(): Promise<
+  [string | null, ActivityEvent[] | null]
 > {
   const { data, error } = await makeSBRequest(async (sb) =>
-    sb.from("OutreachEvents").select("*").order("date", { ascending: false })
+    sb.from("ActivityEvents").select("*").eq("activity_type", "outreach")
   );
 
   if (error || !data) {
@@ -25,21 +18,14 @@ export async function fetchEvents(): Promise<
   return [null, data];
 }
 
-export async function createEvent(payload: {
-  name: string;
-  date: string;
-}): Promise<[string | null, OutreachEvent | null]> {
-  const eventDate = new Date(payload.date).toISOString().split("T")[0];
-
+export async function createOutreachEvent(
+  payload: Pick<ActivityEvent, "event_name" | "event_date" | "minutes_cap">
+): Promise<[string | null, ActivityEvent | null]> {
   const { data, error } = await makeSBRequest(async (sb) =>
-    sb
-      .from("OutreachEvents")
-      .insert({
-        name: payload.name,
-        date: eventDate
-      })
-      .select("*")
-      .maybeSingle()
+    sb.from("ActivityEvents").insert({
+      ...payload,
+      activity_type: "outreach"
+    })
   );
 
   if (error || !data) {
@@ -49,22 +35,32 @@ export async function createEvent(payload: {
   return [null, data];
 }
 
-export async function updateEvent(
+export async function updateOutreachEvent(
   eventId: number,
-  updates: Partial<{ name: string; date: string }>
+  updates: Partial<
+    Pick<ActivityEvent, "event_name" | "event_date" | "minutes_cap">
+  >
 ): Promise<[string | null]> {
-  const payload: Partial<OutreachEvent> = {};
+  const payload: Partial<ActivityEvent> = {};
 
-  if (updates.name !== undefined) {
-    payload.name = updates.name;
+  if (updates.event_name !== undefined) {
+    payload.event_name = updates.event_name;
   }
 
-  if (updates.date) {
-    payload.date = new Date(updates.date).toISOString().split("T")[0];
+  if (updates.event_date) {
+    payload.event_date = new Date(updates.event_date).toISOString();
+  }
+
+  if (updates.minutes_cap !== undefined) {
+    payload.minutes_cap = updates.minutes_cap;
   }
 
   const { error } = await makeSBRequest(async (sb) =>
-    sb.from("OutreachEvents").update(payload).eq("id", eventId)
+    sb
+      .from("ActivityEvents")
+      .update(payload)
+      .eq("id", eventId)
+      .eq("activity_type", "outreach")
   );
 
   if (error) {
@@ -74,9 +70,15 @@ export async function updateEvent(
   return [null];
 }
 
-export async function deleteEvent(eventId: number): Promise<[string | null]> {
+export async function deleteOutreachEvents(
+  ...eventId: number[]
+): Promise<[string | null]> {
   const { error } = await makeSBRequest(async (sb) =>
-    sb.from("OutreachEvents").delete().eq("id", eventId)
+    sb
+      .from("ActivityEvents")
+      .delete()
+      .in("id", eventId)
+      .eq("activity_type", "outreach")
   );
 
   if (error) {
@@ -86,14 +88,15 @@ export async function deleteEvent(eventId: number): Promise<[string | null]> {
   return [null];
 }
 
-export async function fetchSessionsForEvent(
-  eventId: string
-): Promise<[string | null, OutreachSession[] | null]> {
+export async function fetchOutreachEventSessions(
+  eventId: number
+): Promise<[string | null, ActivitySession[] | null]> {
   const { data, error } = await makeSBRequest(async (sb) =>
     sb
-      .from("OutreachSessions")
+      .from("ActivitySessions")
       .select("*")
-      .eq("event", eventId)
+      .eq("event_id", eventId)
+      .eq("activity_type", "outreach")
       .order("created_at", { ascending: false })
   );
 
@@ -104,21 +107,22 @@ export async function fetchSessionsForEvent(
   return [null, data];
 }
 
-export async function createSessionsBulk(
-  records: SessionInsert[]
+export async function bulkCreateOutreachEventSessions(
+  records: Pick<ActivitySession, "event_id" | "user_id" | "minutes">[]
 ): Promise<[string | null]> {
   if (!records.length) {
     return [null];
   }
 
-  const payload = records.map((record) => ({
-    user: record.userId,
-    event: record.eventId,
-    minutes: record.minutes
-  }));
+  const payload = records.map((record) => {
+    return {
+      ...record,
+      activity_type: "outreach"
+    } satisfies Omit<ActivitySession, "id" | "created_at">;
+  });
 
   const { error } = await makeSBRequest(async (sb) =>
-    sb.from("OutreachSessions").insert(payload)
+    sb.from("ActivitySessions").insert(payload)
   );
 
   if (error) {
@@ -132,7 +136,26 @@ export async function deleteSession(
   sessionId: number
 ): Promise<[string | null]> {
   const { error } = await makeSBRequest(async (sb) =>
-    sb.from("OutreachSessions").delete().eq("id", sessionId)
+    sb.from("ActivitySessions").delete().eq("id", sessionId)
+  );
+
+  if (error) {
+    return [error.message];
+  }
+
+  return [null];
+}
+
+export async function updateSessionMinutes(
+  sessionId: number,
+  minutes: number
+): Promise<[string | null]> {
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    return ["Minutes must be a non-negative number"];
+  }
+
+  const { error } = await makeSBRequest(async (sb) =>
+    sb.from("ActivitySessions").update({ minutes }).eq("id", sessionId)
   );
 
   if (error) {
@@ -147,30 +170,33 @@ export async function fetchUserSessionEventDates(
 ): Promise<[string | null, string[] | null]> {
   const { data, error } = await makeSBRequest(async (sb) =>
     sb
-      .from("OutreachSessions")
-      .select("event:OutreachEvents(date)")
-      .eq("user", userId)
-      .order("event", { ascending: false })
+      .from("ActivitySessions")
+      .select("event_id, ActivityEvents!inner(event_date)")
+      .eq("user_id", userId)
+      .eq("activity_type", "outreach")
+      .order("ActivityEvents(event_date)", { ascending: false })
   );
 
   if (error || !data) {
     return [error?.message ?? "Failed to load activity", null];
   }
 
-  return [null, data.map((row) => row.event.date ?? "")];
+  return [
+    null,
+    data.map((row) => row.ActivityEvents.event_date ?? "").filter(Boolean)
+  ];
 }
 
-export const getOutreachMinutesCutoff = cache(async (): Promise<number> => {
+export const getOutreachMinutesThreshold = cache(async (): Promise<number> => {
   const DEFAULT_MINUTES_CUTOFF = 900;
 
-  const { enabled, value, exists } = await runFlag(
-    "outreach_minutes_cutoff",
-    getSBBrowserClient()
+  const value = await posthog.getFeatureFlagPayload(
+    "outreach_minutes_qual_threshold"
   );
 
-  if (!exists) return DEFAULT_MINUTES_CUTOFF;
-  if (enabled && typeof value === "number" && Number.isFinite(value))
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
     return value;
+  }
 
   return DEFAULT_MINUTES_CUTOFF;
 });

@@ -1,7 +1,7 @@
 import type { NavItems } from "../Navbar";
 import { Button } from "../ui/button";
 
-import { Skeleton, SVGSkeleton } from "../ui/skeleton";
+import { Skeleton } from "../ui/skeleton";
 
 export default function NavbarSkeleton({ navItems }: { navItems: NavItems }) {
   return (
@@ -10,7 +10,7 @@ export default function NavbarSkeleton({ navItems }: { navItems: NavItems }) {
       <div className="bg-card/80 backdrop-blur-xl border border-border rounded-2xl shadow-2xl px-6 py-3 transition-all duration-300 ease-in-out">
         <div className="flex items-center justify-between space-x-8 transition-all duration-300 ease-in-out">
           <nav className="flex items-center space-x-2 transition-all duration-300 ease-in-out">
-            {navItems.map((item, index) => (
+            {navItems.map((item: NavItems[number], index: number) => (
               <Button
                 asChild
                 variant="ghost"
