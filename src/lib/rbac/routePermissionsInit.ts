@@ -41,12 +41,16 @@ async function initializeRoutePermissions() {
     );
 
     if (payload && typeof payload === "object") {
-      setRoutePermissions(payload as Record<string, any>);
+      await setRoutePermissions(payload as Record<string, any>);
       logger.info(
+        { payload },
         "[RBAC - Route Permissions] Loaded permissions from PostHog feature flag."
       );
     } else {
       logger.warn(
+        {
+          payload
+        },
         "[RBAC - Route Permissions] No PostHog payload; keeping default permissions."
       );
     }

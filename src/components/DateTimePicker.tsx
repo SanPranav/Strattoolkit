@@ -57,9 +57,12 @@ export function DateTimePicker({
         newDate.setMinutes(parseInt(value));
       } else if (type === "ampm") {
         const currentHours = newDate.getHours();
-        newDate.setHours(
-          value === "PM" ? currentHours + 12 : currentHours - 12
-        );
+        const isPM = currentHours >= 12;
+        if (value === "PM" && !isPM) {
+          newDate.setHours(currentHours + 12);
+        } else if (value === "AM" && isPM) {
+          newDate.setHours(currentHours - 12);
+        }
       }
       setDate(newDate);
     }

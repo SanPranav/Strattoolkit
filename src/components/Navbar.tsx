@@ -198,7 +198,7 @@ function MobileNavbar({
 
         <div className="px-4 pb-6 space-y-4">
           <div className="flex items-center space-x-3 rounded-xl border border-border bg-muted/50 px-3 py-3 shadow-inner">
-            <UserBlock user={user} size={14} />
+            <UserBlock user={user} size={"lg"} />
           </div>
 
           <NavList items={navItems} onSelect={handleNavigation} />
@@ -299,7 +299,7 @@ function DesktopNavbar({
                 <Link
                   href={USER_ITEM.url}
                   className="group flex items-center space-x-3 text-muted-foreground transition-colors hover:text-foreground">
-                  <UserBlock user={user} size={10} />
+                  <UserBlock user={user} size={"md"} />
                 </Link>
               </div>
             ) : (
@@ -361,13 +361,19 @@ function UserBlock({
   size
 }: {
   user: FullUserData | null;
-  size: number;
+  size: "sm" | "md" | "lg";
 }) {
   if (!user) return null;
 
+  const sizeClasses = {
+    sm: "w-8 h-8",
+    md: "w-10 h-10",
+    lg: "w-14 h-14"
+  };
+
   return (
     <>
-      <Avatar className={`w-${size} h-${size}`}>
+      <Avatar className={`${sizeClasses[size]}`}>
         <AvatarImage
           src={getProfileImageUrl(user)}
           alt={user.user_name || "Unknown Name"}
@@ -382,7 +388,7 @@ function UserBlock({
           {user.user_name || "Unknown User"}
         </span>
         <span className="text-sm text-muted-foreground">
-          {user?.role
+          {user?.user_role
             ? user.user_role.charAt(0).toUpperCase() + user.user_role.slice(1)
             : "? Role ?"}
         </span>

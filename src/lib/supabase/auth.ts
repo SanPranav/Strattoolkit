@@ -53,16 +53,11 @@ export async function loginOAuth(
 ): Promise<BaseStates> {
   const supabase = getSBBrowserClient();
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
       redirectTo: redirectRoute?.toString()
     }
-  });
-
-  console.log({
-    data,
-    error
   });
 
   if (error) {

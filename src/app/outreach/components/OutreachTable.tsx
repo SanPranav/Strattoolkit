@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import EditUserDialog from "./EditUserDialog";
+import AdjustHoursDialog from "./AdjustHoursDialog";
 import ManageEventsSheet from "@/app/outreach/manage/ManageEventsSheet";
 import type { ActivitySummary, UserData } from "@/lib/types/db";
 import { UserInfo } from "@/components/UserInfo";
@@ -360,7 +360,7 @@ function DesktopComponent({
                   <TableCell>{userData.session_count ?? 0}</TableCell>
                   {canManage && (
                     <TableCell className="text-right">
-                      <EditUserDialog userData={userData} />
+                      <AdjustHoursDialog userData={userData} />
                     </TableCell>
                   )}
                 </TableRow>
@@ -474,7 +474,7 @@ function MobileComponent({
                       )} text-sm`}>
                       {formatMinutes(userData.user_credited_minutes ?? 0)}
                     </Badge>
-                    {canManage && <EditUserDialog userData={userData} />}
+                    {canManage && <AdjustHoursDialog userData={userData} />}
                   </div>
                 </div>
               </CardContent>

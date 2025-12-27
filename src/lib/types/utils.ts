@@ -1,1 +1,1 @@
-type ErrorOrData<T, E = string | null> = [E, null] | [null, T];
+export type ErrorOrData<T, E = string | null> = [E, null] | [null, T];

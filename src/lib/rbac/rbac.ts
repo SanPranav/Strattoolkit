@@ -18,6 +18,7 @@ import {
   setCachedPermissions
 } from "./cache";
 import { parsePermissionString, matchesPermission } from "./matcher";
+import { ErrorOrData } from "../types/utils";
 
 export async function fetchPermissionsForRole(
   role: UserRole,
@@ -71,17 +72,6 @@ export async function fetchAllRBACRules(): Promise<Partial<
     (acc[key] as RBACRule[]).push(rule as RBACRule);
     return acc;
   }, {} as Partial<Record<UserRole, RBACRule[]>>);
-
-  if (!grouped) {
-    logger.error(
-      {
-        data,
-        grouped
-      },
-      "[RBAC] Invalid schema when fetching all RBAC rules"
-    );
-    return null;
-  }
 
   setFullCachedPermissions(grouped as any);
   return grouped;

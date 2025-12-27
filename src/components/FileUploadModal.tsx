@@ -40,7 +40,7 @@ export default function FileUploadModal({
   };
 
   return (
-    <Dialog open={true}>
+    <Dialog>
       <DialogTrigger asChild={!!children}>{children ?? label}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -66,7 +66,7 @@ export default function FileUploadModal({
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button type="submit">Save changes</Button>
+          <Button>Save changes</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

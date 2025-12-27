@@ -37,12 +37,15 @@ export async function manualModifyOutreachHours(
   }
 
   const { error } = await makeSBRequest(async (sb) =>
-    sb.from("ActivitySessions").upsert({
-      user_id: userId,
-      event_id: eventId,
-      activity_type: "outreach",
-      minutes: totalMinutes
-    })
+    sb.from("ActivitySessions").upsert(
+      {
+        user_id: userId,
+        event_id: eventId,
+        activity_type: "outreach",
+        minutes: totalMinutes
+      },
+      { onConflict: "user_id,event_id" }
+    )
   );
 
   if (error) {

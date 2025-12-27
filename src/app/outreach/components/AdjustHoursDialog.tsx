@@ -24,7 +24,7 @@ type EditUserDialogProps = {
   userData: ActivitySummary;
 };
 
-export default function EditUserDialog({ userData }: EditUserDialogProps) {
+export default function AdjustHoursDialog({ userData }: EditUserDialogProps) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,7 +62,7 @@ export default function EditUserDialog({ userData }: EditUserDialogProps) {
 
     const state = await manualModifyOutreachHours(
       userData.user_id,
-      signedAdjustment
+      projectedTotal
     );
 
     switch (state) {

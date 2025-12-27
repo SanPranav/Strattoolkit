@@ -1,5 +1,6 @@
 import { makeSBRequest } from "../supabase/supabase";
 import { ActivitySession, ActivitySummary, ActivityType } from "../types/db";
+import { ErrorOrData } from "../types/utils";
 
 type PaginatedResult<T> = {
   items: T[];
