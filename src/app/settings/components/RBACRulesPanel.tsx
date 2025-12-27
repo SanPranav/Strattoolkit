@@ -349,7 +349,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
   const createMutation = useMutation({
     mutationFn: async (values: RBACRuleInsert) => {
       const [error] = await createRBACRule(values);
-      if (error) throw new Error(error);
+      if (error) console.log(error);
     },
     onSuccess: async () => {
       toast.success("Rule created");
@@ -369,7 +369,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
       values: RBACRuleUpdate;
     }) => {
       const [error] = await updateRBACRule(id, values);
-      if (error) throw new Error(error);
+      if (error) console.log(error);
     },
     onSuccess: async () => {
       toast.success("Rule updated");
@@ -383,7 +383,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       const [error] = await deleteRBACRule(id);
-      if (error) throw new Error(error);
+      if (error) console.log(error);
     },
     onSuccess: async () => {
       toast.success("Rule deleted");
@@ -410,20 +410,6 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
   };
 
   const [draggingId, setDraggingId] = useState<number | null>(null);
-
-  const groupedRules = useMemo(() => {
-    const groups: Record<UserRole, RBACRule[]> = {
-      admin: [],
-      member: [],
-      guest: []
-    };
-    (rules ?? []).forEach((rule) => {
-      const role = (rule.user_role as UserRole) ?? "guest";
-      if (!groups[role]) return;
-      groups[role].push(rule);
-    });
-    return groups;
-  }, [rules]);
 
   const handleSubmit = async (values: RuleFormValues) => {
     if (dialogMode === "create") {
@@ -457,6 +443,33 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
     }
   };
 
+  const doRulesExist = useMemo(() => {
+    if (!rules) return false;
+
+    for (const role in rules) {
+      if (rules[role as UserRole]?.length || 0 > 0) return true;
+    }
+    return false;
+  }, [rules]);
+
+  const getRulesForRole = (role: UserRole) => {
+    if (!doRulesExist) return [];
+
+    return (rules as Record<UserRole, RBACRule[]>)[role] || [];
+  };
+
+  const getRuleById = (id: number) => {
+    if (!doRulesExist) return null;
+
+    for (const role in rules) {
+      const found = (rules as Record<UserRole, RBACRule[]>)[
+        role as UserRole
+      ]?.find((rule) => rule.id === id);
+      if (found) return found;
+    }
+    return null;
+  };
+
   return (
     <Card className="border-border/70 bg-card/60 p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -475,7 +488,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
         <div className="flex h-48 items-center justify-center">
           <Loader />
         </div>
-      ) : rules && rules.length > 0 ? (
+      ) : doRulesExist ? (
         <div className="grid gap-3 md:grid-cols-3">
           {(["admin", "member", "guest"] as UserRole[]).map((role) => (
             <Card
@@ -489,8 +502,8 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
                 if (actionDisabled) return;
                 event.preventDefault();
                 const id = Number(event.dataTransfer.getData("rbac-rule-id"));
-                const droppedRule = rules.find((r) => r.id === id);
-                if (droppedRule) void handleMove(droppedRule, role);
+                const droppedRule = getRuleById(id);
+                if (droppedRule) handleMove(droppedRule, role);
               }}>
               <div className="flex items-center justify-between">
                 <div>
@@ -500,12 +513,12 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
                   <p className="text-lg font-semibold capitalize">{role}</p>
                 </div>
                 <Badge variant="secondary">
-                  {groupedRules[role]?.length ?? 0} rules
+                  {getRulesForRole(role).length ?? 0} rules
                 </Badge>
               </div>
 
               <div className="flex flex-col gap-2">
-                {(groupedRules[role] ?? []).map((rule) => (
+                {getRulesForRole(role).map((rule) => (
                   <Card
                     key={rule.id}
                     className="border-border/70 bg-card/80 p-3 space-y-2 shadow-sm"
@@ -557,7 +570,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
                     )}
                   </Card>
                 ))}
-                {(groupedRules[role] ?? []).length === 0 && (
+                {getRulesForRole(role).length === 0 && (
                   <p className="text-xs text-muted-foreground">
                     No rules for this role.
                   </p>

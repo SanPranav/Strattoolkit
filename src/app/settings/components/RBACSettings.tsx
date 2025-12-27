@@ -1,39 +1,130 @@
-"use server";
+"use client";
+
+import { useEffect, useState } from "react";
 
 import { Card } from "@/components/ui/card";
-import { hasPermission } from "@/lib/rbac/rbac";
 import { RBACRulesPanel } from "./RBACRulesPanel";
-import { getUserDataByUserId } from "@/lib/db/user";
 import { makeSBRequest } from "@/lib/supabase/supabase";
+import {
+  matchesPermission,
+  parsePermissionString,
+  type Permission,
+  type PermissionString,
+  type UserRole
+} from "@/lib/types/rbac";
 
-export async function RBACSettings() {
-  const { data: userData, error } = await makeSBRequest(async (sb) => {
-    const { data, error } = await sb.auth.getUser();
+// Simple client-side load states for RBAC access
+type LoadState =
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "forbidden" }
+  | { status: "ready"; canEdit: boolean };
 
-    if (error || !data.user) {
-      return { data: null, error: error || new Error("No user logged in") };
-    }
+async function fetchPermissions(role: UserRole): Promise<Permission[]> {
+  const { data, error } = await makeSBRequest(async (sb) =>
+    sb.from("rbac").select("resource, action, condition").eq("user_role", role)
+  );
 
-    return sb
-      .from("UserData")
-      .select("user_role")
-      .eq("user_id", data.user?.id)
-      .limit(1)
-      .single();
-  });
+  if (error || !data) return [];
 
-  if (error || !userData) {
+  return data.map((row) => ({
+    resource: row.resource as Permission["resource"],
+    action: row.action as Permission["action"],
+    condition: (row.condition as Permission["condition"]) ?? null
+  }));
+}
+
+async function checkPermission(role: UserRole, permission: PermissionString) {
+  const permissions = await fetchPermissions(role);
+  const parsed = parsePermissionString(permission);
+
+  return permissions.some((perm) => matchesPermission(perm, parsed));
+}
+
+export function RBACSettings() {
+  const [state, setState] = useState<LoadState>({ status: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      const { data: authData, error: authError } = await makeSBRequest(
+        async (sb) => sb.auth.getUser()
+      );
+
+      if (cancelled) return;
+
+      if (authError || !authData?.user) {
+        setState({
+          status: "error",
+          message: "Unable to load user data."
+        });
+        return;
+      }
+
+      const { data: userData, error: userDataError } = await makeSBRequest(
+        async (sb) =>
+          sb
+            .from("UserData")
+            .select("user_role")
+            .eq("user_id", authData.user.id)
+            .limit(1)
+            .single()
+      );
+
+      if (cancelled) return;
+
+      if (userDataError || !userData) {
+        setState({ status: "error", message: "Unable to load user role." });
+        return;
+      }
+
+      const canView = await checkPermission(
+        userData.user_role as UserRole,
+        "settings:view:all"
+      );
+
+      if (cancelled) return;
+
+      if (!canView) {
+        setState({ status: "forbidden" });
+        return;
+      }
+
+      const canEdit = await checkPermission(
+        userData.user_role as UserRole,
+        "rbac:manage"
+      );
+
+      if (cancelled) return;
+
+      setState({ status: "ready", canEdit });
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (state.status === "loading") {
     return (
-      <Card className="border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
-        Unable to load user data.
+      <Card className="border-border/70 bg-card/60 p-6 text-sm">
+        Loading RBAC settings...
       </Card>
     );
   }
 
-  const canView = await hasPermission(userData.user_role, "settings:view:all");
-  const canEdit = await hasPermission(userData.user_role, "rbac:manage");
+  if (state.status === "error") {
+    return (
+      <Card className="border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
+        {state.message}
+      </Card>
+    );
+  }
 
-  if (!canView) {
+  if (state.status === "forbidden") {
     return (
       <Card className="border-destructive/40 bg-destructive/10 p-6 text-sm text-destructive">
         You do not have permission to view RBAC settings.
@@ -41,5 +132,5 @@ export async function RBACSettings() {
     );
   }
 
-  return <RBACRulesPanel canEdit={Boolean(canEdit)} />;
+  return <RBACRulesPanel canEdit={state.canEdit} />;
 }

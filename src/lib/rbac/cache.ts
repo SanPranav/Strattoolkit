@@ -5,7 +5,7 @@ type CacheEntry = {
   storedAt: number;
 };
 
-const CACHE_TTL_MS = 60000; // 60 seconds
+const CACHE_TTL_MS = 60000; // 60 seconds, 1 minute
 
 const permissionsCache = new Map<UserRole, CacheEntry>();
 
@@ -24,19 +24,40 @@ export function getCachedPermissions(role: UserRole): Permission[] | null {
 
 export function setCachedPermissions(
   role: UserRole,
-  permissions: Permission[]
+  rawPermissions: Permission[]
 ): void {
+  const permissions: Permission[] = rawPermissions.map((perm) => ({
+    resource: perm.resource,
+    action: perm.action,
+    condition: perm.condition
+  }));
+
   permissionsCache.set(role, {
     permissions,
     storedAt: Date.now()
   });
 }
 
+export function setFullCachedPermissions(
+  permissions: Partial<
+    Record<
+      UserRole,
+      (Permission & {
+        [key: string]: any;
+      })[]
+    >
+  >
+): void {
+  for (const role in permissions) {
+    setCachedPermissions(role as UserRole, permissions[role as UserRole] ?? []);
+  }
+}
+
 export function invalidateCache(role?: UserRole): void {
   if (role) {
     permissionsCache.delete(role);
   } else {
-    permissionsCache.clear();
+    clearCache();
   }
 }
 

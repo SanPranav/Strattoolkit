@@ -1,14 +1,14 @@
-import { PostgrestSingleResponse } from "@supabase/supabase-js";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { getSBBrowserClient } from "./sbClient";
 import { logger } from "../logger";
-import type { FullUserData, User } from "../types/db";
+import type { FullUserData, } from "../types/db";
 
 type SBRequestCallback<T, U> = (
   sb: ReturnType<typeof getSBBrowserClient>
 ) => Promise<U>;
 
-export async function makeSBRequest<T, U>(fn: SBRequestCallback<T, U>) {
-  const sb = getSBBrowserClient();
+export async function makeSBRequest<T, U>(fn: SBRequestCallback<T, U>, client?: SupabaseClient) {
+  const sb = client ?? getSBBrowserClient();
 
   const ret = await fn(sb);
 

@@ -1,6 +1,6 @@
 "use server";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { getSBServerClient } from "../supabase/sbServer";
 import { makeSBRequest } from "../supabase/supabase";
 import { logger } from "../logger";
@@ -14,8 +14,9 @@ import type {
 } from "../types/rbac";
 import {
   getCachedPermissions,
-  setCachedPermissions,
-  invalidateCache
+  setFullCachedPermissions,
+  invalidateCache,
+  setCachedPermissions
 } from "./cache";
 import { parsePermissionString, matchesPermission } from "../types/rbac";
 
@@ -28,26 +29,14 @@ export async function fetchPermissionsForRole(
     return cached;
   }
 
-  const clientToUse =
-    client ?? (await getSBServerClient({ getAll: () => [], setAll: () => {} }));
-
-  const rolesToFetch: UserRole[] = (() => {
-    switch (role) {
-      case "admin":
-        return ["admin", "member", "guest"];
-      case "member":
-        return ["member", "guest"];
-      case "guest":
-        return ["guest"];
-      default:
-        return [role];
-    }
-  })();
-
-  const { data, error } = await clientToUse
-    .from("rbac")
-    .select("resource, action, condition")
-    .in("user_role", rolesToFetch);
+  const { data, error } = await makeSBRequest(
+    async (sb) =>
+      sb
+        .from("rbac")
+        .select("resource, action, condition")
+        .eq("user_role", role),
+    client
+  );
 
   if (error) {
     logger.error(error, `[RBAC] Failed to fetch permissions for role ${role}:`);
@@ -61,44 +50,47 @@ export async function fetchPermissionsForRole(
       condition: row.condition as Permission["condition"]
     })) ?? [];
 
-  if (role === "admin") {
-    permissions.push(
-      {
-        resource: "settings",
-        action: "view",
-        condition: "all"
-      },
-      {
-        resource: "settings",
-        action: "edit",
-        condition: "all"
-      }
-    );
-  }
-
   setCachedPermissions(role, permissions);
   return permissions;
 }
 
-export async function fetchAllRBACRules(): Promise<RBACRule[]> {
+export async function fetchAllRBACRules(): Promise<Partial<
+  Record<UserRole, RBACRule[]>
+> | null> {
   const { data, error } = await makeSBRequest(async (sb) =>
-    sb
-      .from("rbac")
-      .select("resource, action, condition")
-      .order("user_role", { ascending: true })
+    sb.from("rbac").select("*").order("user_role", { ascending: true })
   );
 
   if (error) {
     logger.error(error, "[RBAC] Failed to fetch all RBAC rules:");
-    return [];
+    return null;
   }
 
-  return (data ?? []) as RBACRule[];
+  const grouped = (data ?? []).reduce((acc, rule) => {
+    const key = rule.user_role as UserRole;
+    if (!acc[key]) acc[key] = [] as RBACRule[];
+    (acc[key] as RBACRule[]).push(rule as RBACRule);
+    return acc;
+  }, {} as Partial<Record<UserRole, RBACRule[]>>);
+
+  if (!grouped) {
+    logger.error(
+      {
+        data,
+        grouped
+      },
+      "[RBAC] Invalid schema when fetching all RBAC rules"
+    );
+    return null;
+  }
+
+  setFullCachedPermissions(grouped as any);
+  return grouped;
 }
 
 export async function createRBACRule(
   rule: RBACRuleInsert
-): Promise<[string | null, RBACRule | null]> {
+): Promise<ErrorOrData<RBACRule, PostgrestError>> {
   const { data, error } = await makeSBRequest(async (sb) =>
     sb
       .from("rbac")
@@ -117,7 +109,7 @@ export async function createRBACRule(
       error,
       `[RBAC] Failed to create RBAC rule: ${rule.resource}:${rule.action}`
     );
-    return [error?.message ?? "Failed to create RBAC rule", null];
+    return [error as any, null];
   }
 
   invalidateCache(rule.user_role);
@@ -127,7 +119,7 @@ export async function createRBACRule(
 export async function updateRBACRule(
   id: number,
   rule: RBACRuleUpdate
-): Promise<[string | null, RBACRule | null]> {
+): Promise<ErrorOrData<RBACRule, PostgrestError>> {
   const updatePayload: Partial<RBACRule> = {};
 
   if (rule.user_role !== undefined) updatePayload.user_role = rule.user_role;
@@ -141,7 +133,7 @@ export async function updateRBACRule(
 
   if (error || !data) {
     logger.error(error, `[RBAC] Failed to update RBAC rule ${id}:`);
-    return [error?.message ?? "Failed to update RBAC rule", null];
+    return [error as any, null];
   }
 
   const updatedRule = data as RBACRule;
@@ -153,7 +145,9 @@ export async function updateRBACRule(
   return [null, updatedRule];
 }
 
-export async function deleteRBACRule(id: number): Promise<[string | null]> {
+export async function deleteRBACRule(
+  id: number
+): Promise<ErrorOrData<"SUCCESS", PostgrestError>> {
   const { data: ruleToDelete, error: fetchError } = await makeSBRequest(
     async (sb) => sb.from("rbac").select("user_role").eq("id", id).maybeSingle()
   );
@@ -163,7 +157,7 @@ export async function deleteRBACRule(id: number): Promise<[string | null]> {
       fetchError,
       `[RBAC] Failed to fetch RBAC rule ${id} for deletion:`
     );
-    return [fetchError.message];
+    return [fetchError, null];
   }
 
   const { error } = await makeSBRequest(async (sb) =>
@@ -172,14 +166,14 @@ export async function deleteRBACRule(id: number): Promise<[string | null]> {
 
   if (error) {
     logger.error(error, `[RBAC] Failed to delete RBAC rule ${id}:`);
-    return [error.message];
+    return [error, null];
   }
 
   if (ruleToDelete) {
     invalidateCache(ruleToDelete.user_role as UserRole);
   }
 
-  return [null];
+  return [null, "SUCCESS"];
 }
 
 export async function hasPermission(
