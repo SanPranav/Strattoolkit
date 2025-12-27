@@ -5,6 +5,7 @@ import { getSBServerClient } from "./lib/supabase/sbServer";
 import { UserRole } from "./lib/types/rbac";
 import { getRequiredPermissionsForRoute } from "./lib/rbac/routePermissions";
 import { ensureRoutePermissionsInitialized } from "./lib/rbac/routePermissionsInit";
+import { logger } from "./lib/logger";
 
 export async function middleware(request: NextRequest) {
   const originalPath = request.nextUrl.pathname;
@@ -38,6 +39,7 @@ export async function middleware(request: NextRequest) {
   });
 
   if (!segments || !segments.length) {
+    logger.debug({ path: originalPath }, "[Middleware] Root route, allow");
     return response;
   }
 
@@ -59,22 +61,44 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  logger.debug(
+    { path: originalPath, role, userId: user?.id },
+    "[Middleware] Resolved request role"
+  );
+
   const requiredPermissions = await getRequiredPermissionsForRoute(segments);
 
   if (!requiredPermissions) {
+    logger.debug({ path: originalPath }, "[Middleware] No RBAC for route");
     return response;
   }
 
   const hasAllRequiredPermissions = await Promise.all(
-    requiredPermissions.map((permission) => hasPermission(role, permission))
+    requiredPermissions.map((permission) =>
+      hasPermission(role, permission, supabase)
+    )
   ).then((results) => results.every(Boolean));
+
+  logger.debug(
+    { path: originalPath, role, requiredPermissions, allowed: hasAllRequiredPermissions },
+    "[Middleware] Permission evaluation result"
+  );
 
   if (!hasAllRequiredPermissions) {
     if (user?.id) {
+      logger.debug(
+        { path: originalPath, role, userId: user.id },
+        "[Middleware] Authenticated user lacks permissions, redirecting"
+      );
       return mwRedirect(response, request.nextUrl.clone(), "/unauthorized", {
         page: originalPath
       });
     }
+
+    logger.debug(
+      { path: originalPath },
+      "[Middleware] Guest user requires login, redirecting"
+    );
 
     return mwRedirect(response, request.nextUrl.clone(), "/auth/login", {
       next: request.nextUrl.pathname

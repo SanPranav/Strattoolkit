@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useUser } from "@/hooks/useUser";
+import { toast } from "sonner";
 
 function getInitials(name: string) {
   if (!name) return "?";
@@ -53,6 +54,10 @@ export function ProfileSettings() {
     console.log("Profile settings submitted", { user });
   };
 
+  const handleChangeAvatar = () => {
+    toast.warning("Changing avatars is under construction!");
+  }
+
   return (
     <div className="space-y-6">
       <Card className="border-border/70 bg-card/60 p-6">
@@ -74,7 +79,7 @@ export function ProfileSettings() {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" type="button">
+          <Button onClick={handleChangeAvatar} variant="outline" size="sm" type="button">
             Change avatar
           </Button>
         </div>
@@ -111,7 +116,7 @@ export function ProfileSettings() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="role">Role</Label>
-              <Input id="role" value={user?.role ?? "Unknown"} disabled />
+              <Input id="role" value={user?.user_role ?? "Unknown"} disabled />
             </div>
           </div>
 

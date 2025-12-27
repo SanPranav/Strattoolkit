@@ -26,6 +26,10 @@ export async function fetchPermissionsForRole(
 ): Promise<Permission[]> {
   const cached = getCachedPermissions(role);
   if (cached) {
+    logger.debug(
+      { role, count: cached.length },
+      "[RBAC] Returning cached permissions"
+    );
     return cached;
   }
 
@@ -49,6 +53,11 @@ export async function fetchPermissionsForRole(
       action: row.action as Permission["action"],
       condition: row.condition as Permission["condition"]
     })) ?? [];
+
+  logger.debug(
+    { role, count: permissions.length },
+    "[RBAC] Permissions fetched from database"
+  );
 
   setCachedPermissions(role, permissions);
   return permissions;
@@ -74,6 +83,10 @@ export async function fetchAllRBACRules(): Promise<Partial<
   }, {} as Partial<Record<UserRole, RBACRule[]>>);
 
   setFullCachedPermissions(grouped as any);
+  logger.debug(
+    { roles: Object.keys(grouped).length },
+    "[RBAC] Loaded all RBAC rules"
+  );
   return grouped;
 }
 
@@ -102,6 +115,10 @@ export async function createRBACRule(
   }
 
   invalidateCache(rule.user_role);
+  logger.debug(
+    { rule: `${rule.user_role}:${rule.resource}:${rule.action}` },
+    "[RBAC] Created RBAC rule"
+  );
   return [null, data as RBACRule];
 }
 
@@ -130,6 +147,8 @@ export async function updateRBACRule(
   if (rule.user_role && rule.user_role !== updatedRule.user_role) {
     invalidateCache(rule.user_role);
   }
+
+  logger.debug({ id, rule: updatePayload }, "[RBAC] Updated RBAC rule");
 
   return [null, updatedRule];
 }
@@ -162,6 +181,8 @@ export async function deleteRBACRule(
     invalidateCache(ruleToDelete.user_role as UserRole);
   }
 
+  logger.debug({ id }, "[RBAC] Deleted RBAC rule");
+
   return [null, "SUCCESS"];
 }
 
@@ -173,7 +194,7 @@ export async function hasPermission(
   const permissions = await fetchPermissionsForRole(role, client);
   const parsedPermission = parsePermissionString(permission);
 
-  return permissions.some((perm) =>
+  const hasPermission = permissions.some((perm) =>
     matchesPermission(
       {
         resource: perm.resource,
@@ -183,4 +204,11 @@ export async function hasPermission(
       parsedPermission
     )
   );
+
+  logger.debug(
+    { role, permission, parsedPermission, permissions, hasPermission },
+    "[RBAC] Checking permission"
+  );
+
+  return hasPermission;
 }
