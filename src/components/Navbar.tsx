@@ -136,14 +136,14 @@ export default function Navbar() {
         <MobileNavbar
           {...navbar}
           navItems={navItems}
-          user={user}
+          user={user || null}
           onNavigate={onNavigate}
         />
       ) : (
         <DesktopNavbar
           {...navbar}
           navItems={navItems}
-          user={user}
+          user={user || null}
           onNavigate={onNavigate}
         />
       )}
