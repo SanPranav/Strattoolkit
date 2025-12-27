@@ -1,9 +1,5 @@
 import { makeSBRequest } from "../supabase/supabase";
-import type {
-  ActivitySession,
-  OutreachEvent,
-  OutreachSession
-} from "../types/db";
+import type { ActivitySession } from "../types/db";
 import { cache } from "react";
 import { ActivityEvent } from "../types/db";
 import { posthog } from "posthog-js";
@@ -53,6 +49,10 @@ export async function updateOutreachEvent(
 
   if (updates.event_date) {
     payload.event_date = new Date(updates.event_date).toISOString();
+  }
+
+  if (updates.minutes_cap !== undefined) {
+    payload.minutes_cap = updates.minutes_cap;
   }
 
   const { error } = await makeSBRequest(async (sb) =>
@@ -146,6 +146,25 @@ export async function deleteSession(
   return [null];
 }
 
+export async function updateSessionMinutes(
+  sessionId: number,
+  minutes: number
+): Promise<[string | null]> {
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    return ["Minutes must be a non-negative number"];
+  }
+
+  const { error } = await makeSBRequest(async (sb) =>
+    sb.from("ActivitySessions").update({ minutes }).eq("id", sessionId)
+  );
+
+  if (error) {
+    return [error.message];
+  }
+
+  return [null];
+}
+
 export async function fetchUserSessionEventDates(
   userId: string
 ): Promise<[string | null, string[] | null]> {
@@ -168,7 +187,7 @@ export async function fetchUserSessionEventDates(
   ];
 }
 
-export const getOutreachMinutesCutoff = cache(async (): Promise<number> => {
+export const getOutreachMinutesThreshold = cache(async (): Promise<number> => {
   const DEFAULT_MINUTES_CUTOFF = 900;
 
   const value = await posthog.getFeatureFlagPayload(

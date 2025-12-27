@@ -3,7 +3,7 @@ import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
 import { fetchPermissionsForRole, hasPermission } from "./lib/rbac/rbac";
 import { getSBServerClient } from "./lib/supabase/sbServer";
 import { UserData } from "./lib/types/db";
-import { UserRole } from "./lib/rbac/types";
+import { UserRole } from "./lib/types/rbac";
 
 const ROUTE_PERMISSIONS: Partial<
   Record<string, Parameters<typeof hasPermission>[1]>

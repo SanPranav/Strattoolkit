@@ -11,13 +11,13 @@ import type {
   RBACRuleInsert,
   RBACRuleUpdate,
   UserRole
-} from "./types";
+} from "../types/rbac";
 import {
   getCachedPermissions,
   setCachedPermissions,
   invalidateCache
 } from "./cache";
-import { parsePermissionString, matchesPermission } from "./types";
+import { parsePermissionString, matchesPermission } from "../types/rbac";
 
 export async function fetchPermissionsForRole(
   role: UserRole,
@@ -66,12 +66,12 @@ export async function fetchPermissionsForRole(
       {
         resource: "settings",
         action: "view",
-        condition: null
+        condition: "all"
       },
       {
         resource: "settings",
         action: "edit",
-        condition: null
+        condition: "all"
       }
     );
   }
@@ -82,7 +82,10 @@ export async function fetchPermissionsForRole(
 
 export async function fetchAllRBACRules(): Promise<RBACRule[]> {
   const { data, error } = await makeSBRequest(async (sb) =>
-    sb.from("rbac").select("*").order("user_role", { ascending: true })
+    sb
+      .from("rbac")
+      .select("resource, action, condition")
+      .order("user_role", { ascending: true })
   );
 
   if (error) {

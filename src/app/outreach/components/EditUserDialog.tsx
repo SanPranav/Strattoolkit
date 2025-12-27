@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatMinutes } from "@/lib/utils";
 import { manualModifyOutreachHours } from "@/lib/db/hours";
@@ -17,16 +18,14 @@ import {
 } from "@/components/ui/dialog";
 import { Edit2, Minus, Plus } from "lucide-react";
 import { ActivitySummary } from "@/lib/types/db";
+import { OUTREACH } from "@/lib/types/queryKeys";
 
 type EditUserDialogProps = {
-  userData: { [K in keyof ActivitySummary]: NonNullable<ActivitySummary[K]> };
-  refreshFunc?: () => void;
+  userData: ActivitySummary;
 };
 
-export default function EditUserDialog({
-  userData,
-  refreshFunc
-}: EditUserDialogProps) {
+export default function EditUserDialog({ userData }: EditUserDialogProps) {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"add" | "subtract">("add");
@@ -59,7 +58,7 @@ export default function EditUserDialog({
       return;
     }
 
-    if (!userData) return;
+    if (!userData.user_id) return;
 
     const state = await manualModifyOutreachHours(
       userData.user_id,
@@ -74,7 +73,9 @@ export default function EditUserDialog({
           )}`
         );
         setOpen(false);
-        refreshFunc?.();
+        void queryClient.invalidateQueries({
+          queryKey: OUTREACH.LEADERBOARD
+        });
         break;
 
       case BaseStates.ERROR:

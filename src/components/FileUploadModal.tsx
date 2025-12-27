@@ -22,17 +22,17 @@ export default function FileUploadModal({
   children,
   label,
   accept,
-  fileCallback
+  fileCallbackAction
 }: {
   children?: React.ReactNode;
   label: string;
   accept?: InputHTMLAttributes<HTMLInputElement>["accept"];
-  fileCallback: (file: File) => void;
+  fileCallbackAction: (file: File) => void;
 }) {
   const handleUpload = (e: React.FormEvent<HTMLInputElement>) => {
     const target = e.target as HTMLInputElement;
     if (target.files && target.files[0]) {
-      fileCallback(target.files[0]);
+      fileCallbackAction(target.files[0]);
       return;
     }
 

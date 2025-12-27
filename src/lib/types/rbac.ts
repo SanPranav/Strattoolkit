@@ -1,24 +1,23 @@
-import type { UserData } from "../types/db";
-import type { Tables, TablesInsert } from "../types/supabase";
+import type { UserData } from "./db";
+import type { Tables, TablesInsert } from "./supabase";
 
 export type UserRole = UserData["user_role"];
 
-export type Resource =
-  | "outreach"
-  | "settings"
-  | "scouting"
-  | "users"
-  | "rbac";
+const Resource = ["outreach", "settings", "scouting", "users", "rbac"] as const;
+export type Resource = (typeof Resource)[number];
 
-export type Action =
-  | "view"
-  | "manage"
-  | "edit"
-  | "submit"
-  | "delete"
-  | "create";
+const Action = [
+  "view",
+  "manage",
+  "edit",
+  "submit",
+  "delete",
+  "create"
+] as const;
+export type Action = (typeof Action)[number];
 
-export type Condition = "own" | "all" | null;
+const Condition = ["own", "all", null] as const;
+export type Condition = (typeof Condition)[number];
 
 export type Permission = {
   resource: Resource;
@@ -52,7 +51,9 @@ export function parsePermissionString(
   };
 }
 
-export function formatPermissionString(permission: Permission): PermissionString {
+export function formatPermissionString(
+  permission: Permission
+): PermissionString {
   if (permission.condition) {
     return `${permission.resource}:${permission.action}:${permission.condition}`;
   }
@@ -65,11 +66,10 @@ export function matchesPermission(
 ): boolean {
   const ruleCondition = rule.condition ?? null;
   const permCondition = permission.condition ?? null;
-  
+
   return (
     rule.resource === permission.resource &&
     rule.action === permission.action &&
     ruleCondition === permCondition
   );
 }
-

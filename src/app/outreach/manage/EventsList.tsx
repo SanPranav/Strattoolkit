@@ -1,9 +1,11 @@
 import { toast } from "sonner";
 import { deleteOutreachEvents } from "@/lib/db/outreach";
+import { formatDateTimeLA } from "@/lib/datetime";
 
 import { Calendar, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import Loader from "@/components/Loader";
 import LogHoursDialog from "./LogHoursDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,6 +20,8 @@ interface EventsListProps {
   onEventDeleted: () => void;
   onHoursLogged: () => void;
   variant?: "page" | "sheet";
+  searchValue?: string;
+  onSearchValueChange?: (value: string) => void;
 }
 
 export default function EventsList({
@@ -26,7 +30,9 @@ export default function EventsList({
   onEventSelect,
   onEventDeleted,
   onHoursLogged,
-  variant = "page"
+  variant = "page",
+  searchValue,
+  onSearchValueChange
 }: EventsListProps) {
   const isSheet = variant === "sheet";
 
@@ -59,10 +65,19 @@ export default function EventsList({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Events
-        </CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Events
+          </CardTitle>
+
+          <Input
+            value={searchValue ?? ""}
+            onChange={(e) => onSearchValueChange?.(e.target.value)}
+            placeholder="Search events..."
+            className="max-w-[260px]"
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <ScrollArea className={isSheet ? "max-h-[60vh] pr-3" : "h-full"}>
@@ -91,7 +106,7 @@ export default function EventsList({
                       <h3 className="font-semibold">{event.event_name}</h3>
                       <p className="text-sm text-muted-foreground">
                         {event.event_date
-                          ? new Date(event.event_date).toLocaleDateString()
+                          ? formatDateTimeLA(event.event_date)
                           : "N/A"}
                       </p>
                     </div>

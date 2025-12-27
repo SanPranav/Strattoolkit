@@ -10,6 +10,8 @@ import { SettingsSidebar } from "./components/SettingsSidebar";
 import { ProfileSettings } from "./components/ProfileSettings";
 import { SettingsTabId, settingsTabs } from "./tabsConfig";
 import { useNavbar } from "@/hooks/useNavbar";
+import { RBACSettings } from "./components/RBACSettings";
+import { useUser } from "@/hooks/useUser";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTabId>("profile");
@@ -46,6 +48,9 @@ export default function SettingsPage() {
             <Separator className="mb-4" />
             <ScrollArea className="h-[calc(100vh-12rem)] md:h-[calc(100vh-10rem)] pr-2">
               {activeTab === "profile" && <ProfileSettings />}
+              {activeTab === "rbac" && (
+                <RBACSettings />
+              )}
             </ScrollArea>
           </section>
         </div>

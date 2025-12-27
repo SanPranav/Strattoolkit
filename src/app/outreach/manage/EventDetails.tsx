@@ -2,6 +2,7 @@ import { Calendar, Clock, Users } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import LogHoursDialog from "./LogHoursDialog";
 import EventSessionsTable from "./EventSessionsTable";
+import { formatDateTimeLA } from "@/lib/datetime";
 import type {
   ActivityEvent,
   ActivitySession,
@@ -32,7 +33,7 @@ export default function EventDetails({
 
   const containerClass = isSheet
     ? "flex flex-col border rounded-xl bg-card text-card-foreground gap-4 p-5 max-h-[70vh] overflow-y-auto"
-    : "flex flex-col h-[calc(100vh-130px)] bg-card rounded-xl text-card-foreground gap-6 border py-6";
+    : "flex flex-col bg-card rounded-xl text-card-foreground gap-6 border py-6 min-h-0";
 
   return (
     <div className={containerClass}>
@@ -40,9 +41,10 @@ export default function EventDetails({
         <Users className="h-5 w-5" />
         <strong>Event Details</strong>
       </div>
-      <div className={`flex-1 flex flex-col ${isSheet ? "px-5" : "p-5"}`}>
+      <div
+        className={`flex-1 min-h-0 flex flex-col ${isSheet ? "px-5" : "p-5"}`}>
         {selectedEvent ? (
-          <div className="space-y-6 pb-5 flex flex-col flex-1 h-full">
+          <div className="space-y-6 pb-5 flex flex-col flex-1 min-h-0">
             <div>
               <h3 className="text-lg font-semibold mb-2">
                 {selectedEvent.event_name}
@@ -51,7 +53,7 @@ export default function EventDetails({
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   {selectedEvent.event_date
-                    ? new Date(selectedEvent.event_date).toLocaleDateString()
+                    ? formatDateTimeLA(selectedEvent.event_date)
                     : "N/A"}
                 </div>
                 <div className="flex items-center gap-3">

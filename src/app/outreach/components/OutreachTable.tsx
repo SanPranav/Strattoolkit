@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, Dispatch, SetStateAction } from "react";
 import { formatMinutes, getBadgeStatusStyles } from "@/lib/utils";
 import {
   Table,
@@ -18,18 +18,10 @@ import EditUserDialog from "./EditUserDialog";
 import ManageEventsSheet from "@/app/outreach/manage/ManageEventsSheet";
 import type { ActivitySummary, UserData } from "@/lib/types/db";
 import { UserInfo } from "@/components/UserInfo";
-
-type OutreachTableProps = {
-  allUsers: ActivitySummary[];
-  canManage: boolean;
-  isLoading: boolean;
-  isLoadingMore: boolean;
-  outreachMinutesCutoff: number;
-  isMobile?: boolean;
-  refetchData?: () => void;
-  onLoadMore?: () => void;
-  hasMore?: boolean;
-};
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { fetchActivitySummariesPaginated } from "@/lib/db/activity";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { OUTREACH } from "@/lib/types/queryKeys";
 
 type TableHeadConfig = {
   key: string;
@@ -73,6 +65,12 @@ type SortConfig = {
   key: SortKey;
   direction: SortDirection;
 };
+
+const PAGE_SIZE = 15;
+
+type PaginatedResponse = NonNullable<
+  Awaited<ReturnType<typeof fetchActivitySummariesPaginated>>
+>;
 
 function getUserSortValue(user: ActivitySummary): string {
   return user.user_name?.toLowerCase() || "";
@@ -143,20 +141,58 @@ function LoadMoreButton({
 }
 
 export function OutreachTable({
-  allUsers,
   canManage,
-  isLoading,
-  isLoadingMore,
-  outreachMinutesCutoff,
-  isMobile = false,
-  refetchData,
-  onLoadMore,
-  hasMore
-}: OutreachTableProps) {
+  outreachMinutesThreshold
+}: {
+  canManage: boolean;
+  outreachMinutesThreshold: number;
+}) {
+  const {
+    data,
+    error,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status
+  } = useInfiniteQuery<PaginatedResponse, Error>({
+    queryKey: OUTREACH.LEADERBOARD,
+    queryFn: async ({ pageParam = 1 }) => {
+      const pageNum = typeof pageParam === "number" ? pageParam : 1;
+      const result = await fetchActivitySummariesPaginated(
+        pageNum,
+        PAGE_SIZE,
+        ["outreach"],
+        "user_credited_minutes",
+        "desc"
+      );
+
+      if (!result) {
+        throw new Error("Failed to load outreach data");
+      }
+
+      return result;
+    },
+    getNextPageParam: (lastPage) => {
+      if (!lastPage?.items?.length) return undefined;
+      return lastPage.page < lastPage.totalPages
+        ? lastPage.page + 1
+        : undefined;
+    },
+    initialPageParam: 1,
+    refetchOnWindowFocus: false
+  });
+  const isMobile = useIsMobile();
+
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "outreachMinutes",
     direction: "descending"
   });
+
+  const allUsers = useMemo(() => {
+    if (!data?.pages?.length) return [];
+    return data.pages.flatMap((page) => page.items);
+  }, [data]);
 
   const sortedUsers = useMemo(
     () => sortUsersList(allUsers, sortConfig),
@@ -165,108 +201,70 @@ export function OutreachTable({
 
   const renderLoadMore = () => (
     <LoadMoreButton
-      isLoadingMore={Boolean(isLoadingMore)}
-      hasMore={hasMore}
-      onLoadMore={onLoadMore}
+      isLoadingMore={Boolean(isFetchingNextPage)}
+      hasMore={hasNextPage}
+      onLoadMore={() => fetchNextPage()}
     />
   );
 
   if (isMobile) {
     return (
-      <div className="w-full">
-        <div className="space-y-3">
-          <div className="flex gap-2 p-2 bg-muted/50 rounded-lg">
-            <Button
-              variant={sortConfig.key === "user" ? "default" : "outline"}
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => {
-                setSortConfig((prev) => ({
-                  key: "user",
-                  direction:
-                    prev.key === "user" && prev.direction === "ascending"
-                      ? "descending"
-                      : "ascending"
-                }));
-              }}>
-              Name{" "}
-              {sortConfig.key === "user" &&
-                (sortConfig.direction === "ascending" ? "↑" : "↓")}
-            </Button>
-            <Button
-              variant={
-                sortConfig.key === "outreachMinutes" ? "default" : "outline"
-              }
-              size="sm"
-              className="flex-1 text-xs"
-              onClick={() => {
-                setSortConfig((prev) => ({
-                  key: "outreachMinutes",
-                  direction:
-                    prev.key === "outreachMinutes" &&
-                    prev.direction === "ascending"
-                      ? "descending"
-                      : "ascending"
-                }));
-              }}>
-              Hours{" "}
-              {sortConfig.key === "outreachMinutes" &&
-                (sortConfig.direction === "ascending" ? "↑" : "↓")}
-            </Button>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-8">
-              <LoadingState message="Loading members..." />
-            </div>
-          ) : allUsers.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              No user data found
-            </div>
-          ) : (
-            sortedUsers.map((userData) => (
-              <Card key={userData.user_id} className="p-4">
-                <CardContent className="p-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <UserInfo
-                        user={userData as unknown as UserData}
-                        userId={userData.user_id!}
-                        withoutEmail={true}
-                      />
-                    </div>
-                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <Badge
-                        className={`${getBadgeStatusStyles(
-                          userData.user_credited_minutes ?? 0,
-                          outreachMinutesCutoff,
-                          outreachMinutesCutoff - 60 * 3
-                        )} text-sm`}>
-                        {formatMinutes(userData.user_credited_minutes ?? 0)}
-                      </Badge>
-                      {canManage && (
-                        <EditUserDialog
-                          userData={userData}
-                          refreshFunc={refetchData}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-          {isLoadingMore && (
-            <div className="text-center py-4">
-              <LoadingState message="Loading more..." />
-            </div>
-          )}
-          {renderLoadMore()}
-        </div>
-      </div>
+      <MobileComponent
+        {...{
+          sortConfig,
+          setSortConfig,
+          isLoading,
+          allUsers,
+          sortedUsers,
+          isFetchingNextPage,
+          outreachMinutesThreshold,
+          canManage,
+          renderLoadMore
+        }}
+      />
     );
   }
 
+  return (
+    <DesktopComponent
+      {...{
+        sortConfig,
+        setSortConfig,
+        isLoading,
+        allUsers,
+        sortedUsers,
+        isFetchingNextPage,
+        outreachMinutesThreshold,
+        canManage,
+        renderLoadMore
+      }}
+    />
+  );
+}
+
+type DesktopProps = {
+  sortConfig: SortConfig;
+  setSortConfig: Dispatch<SetStateAction<SortConfig>>;
+  isLoading: boolean;
+  allUsers: ActivitySummary[];
+  sortedUsers: ActivitySummary[];
+  isFetchingNextPage: boolean;
+  outreachMinutesThreshold: number;
+  canManage: boolean;
+  renderLoadMore: () => React.ReactNode;
+};
+
+function DesktopComponent({
+  sortConfig,
+  setSortConfig,
+  isLoading,
+  allUsers,
+  sortedUsers,
+  isFetchingNextPage,
+  outreachMinutesThreshold,
+  canManage,
+  renderLoadMore
+}: DesktopProps) {
   return (
     <div className="relative w-full h-full flex flex-col">
       <div className="overflow-x-auto">
@@ -343,15 +341,18 @@ export function OutreachTable({
                 <TableRow key={userData.user_id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2 min-w-0">
-                      <UserInfo userId={userData.user_id} withoutEmail={true} />
+                      <UserInfo
+                        userId={userData.user_id || ""}
+                        withoutEmail={true}
+                      />
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge
                       className={`${getBadgeStatusStyles(
                         userData.user_credited_minutes ?? 0,
-                        outreachMinutesCutoff,
-                        outreachMinutesCutoff - 60 * 3
+                        outreachMinutesThreshold,
+                        outreachMinutesThreshold - 60 * 3
                       )} text-sm md:text-base`}>
                       {formatMinutes(userData.user_credited_minutes ?? 0)}
                     </Badge>
@@ -359,10 +360,7 @@ export function OutreachTable({
                   <TableCell>{userData.session_count ?? 0}</TableCell>
                   {canManage && (
                     <TableCell className="text-right">
-                      <EditUserDialog
-                        userData={userData}
-                        refreshFunc={refetchData}
-                      />
+                      <EditUserDialog userData={userData} />
                     </TableCell>
                   )}
                 </TableRow>
@@ -371,12 +369,125 @@ export function OutreachTable({
           </TableBody>
         </Table>
       </div>
-      {isLoadingMore && (
+      {isFetchingNextPage && (
         <div className="flex justify-center py-4">
           <LoadingState message="Loading more..." />
         </div>
       )}
       {renderLoadMore()}
+    </div>
+  );
+}
+
+type MobileProps = {
+  sortConfig: SortConfig;
+  setSortConfig: Dispatch<SetStateAction<SortConfig>>;
+  isLoading: boolean;
+  allUsers: ActivitySummary[];
+  sortedUsers: ActivitySummary[];
+  isFetchingNextPage: boolean;
+  outreachMinutesThreshold: number;
+  canManage: boolean;
+  renderLoadMore: () => React.ReactNode;
+};
+
+function MobileComponent({
+  sortConfig,
+  setSortConfig,
+  isLoading,
+  allUsers,
+  sortedUsers,
+  isFetchingNextPage,
+  outreachMinutesThreshold,
+  canManage,
+  renderLoadMore
+}: MobileProps) {
+  return (
+    <div className="w-full">
+      <div className="space-y-3">
+        <div className="flex gap-2 p-2 bg-muted/50 rounded-lg">
+          <Button
+            variant={sortConfig.key === "user" ? "default" : "outline"}
+            size="sm"
+            className="flex-1 text-xs"
+            onClick={() => {
+              setSortConfig((prev) => ({
+                key: "user",
+                direction:
+                  prev.key === "user" && prev.direction === "ascending"
+                    ? "descending"
+                    : "ascending"
+              }));
+            }}>
+            Name{" "}
+            {sortConfig.key === "user" &&
+              (sortConfig.direction === "ascending" ? "↑" : "↓")}
+          </Button>
+          <Button
+            variant={
+              sortConfig.key === "outreachMinutes" ? "default" : "outline"
+            }
+            size="sm"
+            className="flex-1 text-xs"
+            onClick={() => {
+              setSortConfig((prev) => ({
+                key: "outreachMinutes",
+                direction:
+                  prev.key === "outreachMinutes" &&
+                  prev.direction === "ascending"
+                    ? "descending"
+                    : "ascending"
+              }));
+            }}>
+            Hours{" "}
+            {sortConfig.key === "outreachMinutes" &&
+              (sortConfig.direction === "ascending" ? "↑" : "↓")}
+          </Button>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-8">
+            <LoadingState message="Loading members..." />
+          </div>
+        ) : allUsers.length === 0 ? (
+          <div className="text-center py-8 text-sm text-muted-foreground">
+            No user data found
+          </div>
+        ) : (
+          sortedUsers.map((userData) => (
+            <Card key={userData.user_id} className="p-4">
+              <CardContent className="p-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <UserInfo
+                      user={userData as unknown as UserData}
+                      userId={userData.user_id!}
+                      withoutEmail={true}
+                    />
+                  </div>
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <Badge
+                      className={`${getBadgeStatusStyles(
+                        userData.user_credited_minutes ?? 0,
+                        outreachMinutesThreshold,
+                        outreachMinutesThreshold - 60 * 3
+                      )} text-sm`}>
+                      {formatMinutes(userData.user_credited_minutes ?? 0)}
+                    </Badge>
+                    {canManage && <EditUserDialog userData={userData} />}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+        {isFetchingNextPage && (
+          <div className="text-center py-4">
+            <LoadingState message="Loading more..." />
+          </div>
+        )}
+        {renderLoadMore()}
+      </div>
     </div>
   );
 }

@@ -7,27 +7,25 @@ import { Clock } from "lucide-react";
 import { formatMinutes, getBadgeStatusStyles } from "@/lib/utils";
 import type { FullUserData } from "@/lib/types/db";
 
-type UserProgressCardProps = {
-  user: FullUserData | null;
-  profileName: string;
-  profileEmail: string;
-  profileAvatar?: string;
-  outreachMinutesCutoff: number;
-};
-
 export function UserProgressCard({
-  user,
-  profileName,
-  profileEmail,
-  profileAvatar,
-  outreachMinutesCutoff
-}: UserProgressCardProps) {
-  const currentMinutes = user?.minutes ?? 0;
-  const totalRawMinutes = user?.user_credited_minutes ?? 0;
-  const progressPercent = outreachMinutesCutoff
-    ? Math.min(1000, Math.round((currentMinutes / outreachMinutesCutoff) * 100))
+  userData,
+  outreachMinutesThreshold
+}: {
+  userData: FullUserData | null;
+  outreachMinutesThreshold: number;
+}) {
+  const currentMinutes = userData?.minutes ?? 0;
+  const totalRawMinutes = userData?.user_credited_minutes ?? 0;
+  const progressPercent = outreachMinutesThreshold
+    ? Math.min(
+        1000,
+        Math.round((currentMinutes / outreachMinutesThreshold) * 100)
+      )
     : 0;
-  const minutesRemaining = Math.max(0, outreachMinutesCutoff - currentMinutes);
+  const minutesRemaining = Math.max(
+    0,
+    outreachMinutesThreshold - currentMinutes
+  );
 
   return (
     <Card className="w-full">
@@ -36,27 +34,27 @@ export function UserProgressCard({
           <div className="relative flex items-center justify-center">
             <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
               <AvatarImage
-                src={profileAvatar}
-                alt={profileName}
+                src={userData?.avatar_url ?? ""}
+                alt={userData?.user_name || "Unknown User"}
                 className="rounded-full object-cover"
               />
               <AvatarFallback className="bg-gradient-to-br from-blue-800 to-purple-800 text-white text-sm font-semibold rounded-full flex items-center justify-center h-full w-full">
-                {profileName.charAt(0).toUpperCase() ?? "?"}
+                {userData?.user_name?.charAt(0).toUpperCase() ?? "?"}
               </AvatarFallback>
             </Avatar>
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold text-base md:text-lg truncate">
-              {profileName}
+              {userData?.user_name || "Unknown User"}
             </h3>
             <p className="text-sm text-muted-foreground truncate">
-              {profileEmail}
+              {userData?.email || "No Email"}
             </p>
           </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {user ? (
+        {userData ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">
@@ -73,10 +71,10 @@ export function UserProgressCard({
               <Badge
                 className={`${getBadgeStatusStyles(
                   currentMinutes,
-                  outreachMinutesCutoff,
-                  outreachMinutesCutoff - 60 * 3
+                  outreachMinutesThreshold,
+                  outreachMinutesThreshold - 60 * 3
                 )} text-xs md:text-sm px-2 md:px-3 py-1`}>
-                {currentMinutes >= outreachMinutesCutoff
+                {currentMinutes >= outreachMinutesThreshold
                   ? "Complete"
                   : "In Progress"}
               </Badge>
@@ -101,7 +99,7 @@ export function UserProgressCard({
                   }}></div>
               </div>
               <div className="text-xs text-muted-foreground">
-                {outreachMinutesCutoff > 0 ? (
+                {outreachMinutesThreshold > 0 ? (
                   <>{formatMinutes(minutesRemaining)} remaining</>
                 ) : (
                   ""

@@ -14,9 +14,27 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
-export function DateTimePicker() {
-  const [date, setDate] = React.useState<Date>();
+type DateTimePickerProps = {
+  value?: Date;
+  onChange?: (next: Date | undefined) => void;
+  placeholder?: string;
+};
+
+export function DateTimePicker({
+  value,
+  onChange,
+  placeholder = "MM/DD/YYYY hh:mm aa"
+}: DateTimePickerProps) {
+  const [internalDate, setInternalDate] = React.useState<Date>();
   const [isOpen, setIsOpen] = React.useState(false);
+
+  const date = value ?? internalDate;
+  const setDate = (next: Date | undefined) => {
+    if (value === undefined) {
+      setInternalDate(next);
+    }
+    onChange?.(next);
+  };
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const handleDateSelect = (selectedDate: Date | undefined) => {
@@ -60,11 +78,16 @@ export function DateTimePicker() {
           {date ? (
             format(date, "MM/dd/yyyy hh:mm aa")
           ) : (
-            <span>MM/DD/YYYY hh:mm aa</span>
+            <span>{placeholder}</span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent
+        className="w-auto p-0 max-h-[70vh] overflow-hidden"
+        align="start"
+        side="bottom"
+        onWheelCapture={(event) => event.stopPropagation()}
+        onTouchMoveCapture={(event) => event.stopPropagation()}>
         <div className="sm:flex">
           <Calendar
             mode="single"

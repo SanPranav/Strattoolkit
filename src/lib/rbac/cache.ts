@@ -1,4 +1,4 @@
-import type { Permission, UserRole } from "./types";
+import type { Permission, UserRole } from "../types/rbac";
 
 type CacheEntry = {
   permissions: Permission[];
@@ -43,4 +43,3 @@ export function invalidateCache(role?: UserRole): void {
 export function clearCache(): void {
   permissionsCache.clear();
 }
-

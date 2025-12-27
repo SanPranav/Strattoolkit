@@ -1,8 +1,5 @@
 import { makeSBRequest } from "../supabase/supabase";
-import { ActivityType } from "../types/db";
-import type { Tables } from "../types/supabase";
-
-type ActivitySummaryRow = Tables<"UserActivitySummaries">;
+import { ActivitySession, ActivitySummary, ActivityType } from "../types/db";
 
 type PaginatedResult<T> = {
   items: T[];
@@ -15,7 +12,7 @@ type PaginatedResult<T> = {
 export async function fetchUserActivitySummary(
   userId: string,
   types: ActivityType[]
-): Promise<[string | null, ActivitySummaryRow | null]> {
+): Promise<ErrorOrData<ActivitySummary>> {
   const { data, error } = await makeSBRequest(async (sb) =>
     sb
       .from("UserActivitySummaries")
@@ -29,7 +26,7 @@ export async function fetchUserActivitySummary(
     return [error.message ?? "Failed to load activity summary", null];
   }
 
-  return [null, data as ActivitySummaryRow | null];
+  return [null, data as ActivitySummary | null];
 }
 
 export async function fetchActivitySummariesPaginated(
@@ -38,7 +35,7 @@ export async function fetchActivitySummariesPaginated(
   types: ActivityType[],
   orderBy: string = "user_credited_minutes",
   orderDirection: "asc" | "desc" = "desc"
-): Promise<PaginatedResult<ActivitySummaryRow> | null> {
+): Promise<PaginatedResult<ActivitySummary> | null> {
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
@@ -56,7 +53,7 @@ export async function fetchActivitySummariesPaginated(
   }
 
   return {
-    items: data as ActivitySummaryRow[],
+    items: data as ActivitySummary[],
     page,
     perPage,
     totalItems: count,
@@ -64,19 +61,35 @@ export async function fetchActivitySummariesPaginated(
   };
 }
 
-export async function fetchActivitySummaryByEvent(
+export async function fetchActivitySessionsByEventId(
   eventId: number
-): Promise<[string | null, ActivitySummaryRow[]]> {
+): Promise<ErrorOrData<ActivitySession[]>> {
   const { data, error } = await makeSBRequest(async (sb) =>
-    sb
-      .from("UserActivitySummaries")
-      .select("minutes,user_credited_minutes")
-      .eq("event_id", eventId)
+    sb.from("ActivitySessions").select("*").eq("event_id", eventId)
   );
 
   if (error || !data) {
-    return [error?.message ?? "Failed to load event summary", []];
+    return [error?.message ?? "Failed to load event summary", null];
   }
 
-  return [null, data as ActivitySummaryRow[]];
+  return [null, data];
+}
+
+export async function fetchTotalActivityMinutes(
+  types: ActivityType[]
+): Promise<ErrorOrData<number>> {
+  const { data, error } = await makeSBRequest(async (sb) =>
+    sb
+      .from("UserActivitySummaries")
+      .select("minutes")
+      .in("activity_type", types)
+  );
+
+  if (error) {
+    return [error.message ?? "Failed to load total minutes", null];
+  }
+
+  const total = (data ?? []).reduce((acc, row) => acc + (row?.minutes ?? 0), 0);
+
+  return [null, total];
 }

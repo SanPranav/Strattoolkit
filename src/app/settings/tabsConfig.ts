@@ -1,4 +1,4 @@
-export type SettingsTabId = "profile";
+export type SettingsTabId = "profile" | "rbac";
 
 export interface SettingsTabConfig {
   id: SettingsTabId;
@@ -12,5 +12,10 @@ export const settingsTabs: SettingsTabConfig[] = [
     id: "profile",
     label: "Profile",
     description: "Manage your personal information and avatar"
+  },
+  {
+    id: "rbac",
+    label: "RBAC",
+    description: "Manage role-based access control rules"
   }
 ];

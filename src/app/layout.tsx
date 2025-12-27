@@ -4,6 +4,7 @@ import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import Navbar from "@/components/Navbar";
 import NavbarTip from "@/components/NavbarTip";
+import { QueryProvider } from "@/components/QueryProvider";
 
 import "./globals.css";
 
@@ -30,12 +31,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={"dark"}>
-        <main className={`w-full ${geistSans.className} antialiased`}>
-          <Navbar />
-          <NavbarTip />
-          {children}
-        </main>
-        <Toaster richColors closeButton />
+        <QueryProvider>
+          <main className={`w-full ${geistSans.className} antialiased`}>
+            <Navbar />
+            <NavbarTip />
+            {children}
+          </main>
+          <Toaster richColors closeButton />
+        </QueryProvider>
       </body>
     </html>
   );
