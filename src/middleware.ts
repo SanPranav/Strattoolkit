@@ -11,8 +11,6 @@ export async function middleware(request: NextRequest) {
   const originalPath = request.nextUrl.pathname;
   const segments = originalPath.split("/").filter(Boolean);
 
-  logger.debug({ request }, "[Middleware] Processing request");
-
   if (originalPath.startsWith("/ph")) {
     return posthogMiddleware(request);
   }
@@ -22,6 +20,14 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request
   });
+
+  logger.debug(
+    {
+      request: request.url,
+      next: response.url
+    },
+    "[Middleware] Processing request"
+  );
 
   const supabase = getSBServerClient({
     getAll: () => {
@@ -82,7 +88,12 @@ export async function middleware(request: NextRequest) {
   ).then((results) => results.every(Boolean));
 
   logger.debug(
-    { path: originalPath, role, requiredPermissions, allowed: hasAllRequiredPermissions },
+    {
+      path: originalPath,
+      role,
+      requiredPermissions,
+      allowed: hasAllRequiredPermissions
+    },
     "[Middleware] Permission evaluation result"
   );
 

@@ -6,11 +6,7 @@ import pino, { Logger } from "pino";
 const isBrowser = typeof window !== "undefined";
 
 export const logger: Logger = pino({
-  browser: isBrowser
-    ? {
-        asObject: true // Log as objects in the browser for better structure
-      }
-    : undefined,
+  browser: { asObject: true },
   transport: {
     target: "pino-pretty",
     options: {
