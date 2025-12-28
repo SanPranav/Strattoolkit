@@ -21,14 +21,6 @@ export async function middleware(request: NextRequest) {
     request
   });
 
-  logger.debug(
-    {
-      request: request.url,
-      next: response.url
-    },
-    "[Middleware] Processing request"
-  );
-
   const supabase = getSBServerClient({
     getAll: () => {
       return request.cookies.getAll();
@@ -47,7 +39,6 @@ export async function middleware(request: NextRequest) {
   });
 
   if (!segments || !segments.length) {
-    logger.debug({ path: originalPath }, "[Middleware] Root route, allow");
     return response;
   }
 
@@ -70,7 +61,12 @@ export async function middleware(request: NextRequest) {
   }
 
   logger.debug(
-    { path: originalPath, role, userId: user?.id },
+    {
+      requestUrl: request.url,
+      nextUrl: response.url,
+      role,
+      userId: user?.id || "Unknown ID"
+    },
     "[Middleware] Resolved request role"
   );
 

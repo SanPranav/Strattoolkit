@@ -10,7 +10,15 @@ const levels = {
 } as const;
 
 export const logger: Logger<keyof typeof levels> = pino({
-  browser: { asObject: true },
+  browser: {
+    asObject: true,
+    transmit: {
+      level: "info",
+      send: (level, logEvent) => {
+        // navigator.sendBeacon("/api/pino_logs", JSON.stringify(logEvent));
+      }
+    }
+  },
   transport: {
     target: "pino-pretty",
     options: {
