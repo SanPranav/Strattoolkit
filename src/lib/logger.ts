@@ -1,11 +1,15 @@
 import pino, { Logger } from "pino";
 
-// Lightweight universal logger wrapper around pino that works in both
-// browser and server (Node / edge) environments without relying on worker
-// transports that Next.js cannot bundle (eg. thread-stream).
-const isBrowser = typeof window !== "undefined";
+const levels = {
+  fatal: 60,
+  error: 50,
+  warn: 40,
+  info: 30,
+  debug: 20,
+  trace: 10
+} as const;
 
-export const logger: Logger = pino({
+export const logger: Logger<keyof typeof levels> = pino({
   browser: { asObject: true },
   transport: {
     target: "pino-pretty",
@@ -16,6 +20,14 @@ export const logger: Logger = pino({
       ignore: "pid,hostname"
     }
   },
+  redact: ["password", "email"],
   level: process.env.PINO_LOG_LEVEL || "debug",
-  redact: ["password", "email"]
+  customLevels: levels,
+  useOnlyCustomLevels: true,
+  formatters: {
+    level: (label) => {
+      return { level: label.toUpperCase() };
+    }
+  },
+  timestamp: pino.stdTimeFunctions.isoTimeNano
 });
