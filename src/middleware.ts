@@ -6,6 +6,7 @@ import { UserRole } from "./lib/types/rbac";
 import { getRequiredPermissionsForRoute } from "./lib/rbac/routePermissions";
 import { ensureRoutePermissionsInitialized } from "./lib/rbac/routePermissionsInit";
 import { logger } from "./lib/logger";
+import { sanitizePathname } from "./lib/utils";
 
 export async function middleware(request: NextRequest) {
   const originalPath = request.nextUrl.pathname;
@@ -100,7 +101,7 @@ export async function middleware(request: NextRequest) {
         "[Middleware] Authenticated user lacks permissions, redirecting"
       );
       return mwRedirect(response, request.nextUrl.clone(), "/unauthorized", {
-        page: originalPath
+        next: originalPath
       });
     }
 
@@ -109,8 +110,11 @@ export async function middleware(request: NextRequest) {
       "[Middleware] Guest user requires login, redirecting"
     );
 
+    const next = sanitizePathname(request.nextUrl.pathname);
+    console.log(next);
+
     return mwRedirect(response, request.nextUrl.clone(), "/auth/login", {
-      next: request.nextUrl.pathname
+      next
     });
   }
 

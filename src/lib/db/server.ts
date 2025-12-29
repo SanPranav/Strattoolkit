@@ -1,14 +1,14 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { getSBServerClient } from "../supabase/sbServer";
+import { getSBServerClientWithNextJSCookies } from "../supabase/sbServer";
 
 import type { UserData } from "../types/db";
 
 export async function getUserWithId(
   userId: string
 ): Promise<[string | null, UserData | null]> {
-  const sb = getSBServerClient(await cookies());
+  const sb = await getSBServerClientWithNextJSCookies();
 
   const { data, error } = await sb
     .from("UserData")
@@ -27,7 +27,7 @@ export async function getUserWithId(
 export async function getAllUsers(): Promise<
   [string | null, UserData[] | null]
 > {
-  const sb = getSBServerClient(await cookies());
+  const sb = await getSBServerClientWithNextJSCookies();
 
   const { data, error } = await sb
     .from("UserData")

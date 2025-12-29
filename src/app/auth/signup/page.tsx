@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useIsMounted } from "@/hooks/useIsHydrated";
 import { useNavbar } from "@/hooks/useNavbar";
 import { loginOAuth, signupEmailPass } from "@/lib/supabase/auth";
-import { BaseStates, SignupStates, stateToMessage } from "@/lib/types/states";
+import { sanitizePathname } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { BaseStates, SignupStates, stateToMessage } from "@/lib/types/states";
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -22,87 +24,68 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import PasswordBlock from "../PasswordBlock";
 import SkeletonSignupForm from "./SkeletonSignupForm";
-import Link from "next/link";
-import { safeParseSearchParams } from "@/lib/utils";
 
 export default function SignupForm() {
-  const [redirectRoute, setRedirectRoute] = useState("/");
-
-  const { setVariant, setDefaultExpanded, resetNavbar } = useNavbar();
   const router = useRouter();
+  const { setVariant, setDefaultExpanded, resetNavbar } = useNavbar();
   const isHydrated = useIsMounted();
+  const searchParams = useSearchParams();
 
-  useEffect(() => {
-    const params = safeParseSearchParams(window.location.search);
-    const redirect = params?.get("redirect");
-
-    if (redirect?.startsWith("/") && !redirect.startsWith("//")) {
-      setRedirectRoute(redirect);
-    }
-  }, []);
-
-  const runRedirect = useCallback(() => {
-    toast.dismiss();
-    router.push(redirectRoute);
-  }, [router, redirectRoute]);
+  const redirectUrl = sanitizePathname(searchParams.get("next") || "/");
 
   const handleOAuth = async function (type: "discord" | "google") {
-    toast.loading("Continue on the popup ...", { id: "oAuthLoader" });
+    toast.loading("Continue on the popup ...", { id: "signUpOAuthToast" });
 
-    const state = await loginOAuth(type);
+    const state = await loginOAuth(type, redirectUrl);
 
     switch (state) {
       case BaseStates.SUCCESS:
-        toast.success("Login successful!", { id: "oAuthLoader" });
+        toast.success("Login successful!", { id: "signUpOAuthToast" });
         logger.info({ provider: type }, "OAuth signup/login successful");
-        runRedirect();
         break;
       case BaseStates.ERROR:
       default:
-        toast.error("Something went wrong :(", { id: "oAuthLoader" });
+        toast.error("Something went wrong :(", { id: "signUpOAuthToast" });
         logger.error({ provider: type }, "OAuth signup/login failed");
         break;
     }
   };
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-      const formData = new FormData(e.currentTarget);
-      let name = formData.get("name")?.toString();
-      let email = formData.get("email")?.toString();
-      const password1 = formData.get("password1")?.toString();
-      const password2 = formData.get("password2")?.toString();
+    toast.loading("Creating your account ...", { id: "signUpEmailPassToast" });
 
-      if (!name || !email || !password1 || !password2) {
-        toast.error("Please fill in all fields.");
-        return;
-      }
+    const formData = new FormData(e.currentTarget);
+    let name = formData.get("name")?.toString();
+    let email = formData.get("email")?.toString();
+    const password1 = formData.get("password1")?.toString();
+    const password2 = formData.get("password2")?.toString();
 
-      name = name.trim();
-      email = email.trim();
-      toast.success("Login successful!", { id: "aLoader" });
-      logger.info({ email }, "Password signup successful");
+    if (!name || !email || !password1 || !password2) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
 
-      let state = SignupStates.ERR_UNKNOWN;
-      state = await signupEmailPass(email, password1, password2, name);
+    name = name.trim();
+    email = email.trim();
 
-      switch (state) {
-        case SignupStates.SUCCESS:
-          toast.success("Login successful!", { id: "aLoader" });
-          logger.info({ email }, "Password login successful");
-          runRedirect();
-          break;
-        default:
-          toast.error(stateToMessage(state), {
-            id: "aLoader"
-          });
-          break;
-      }
-    },
-    [runRedirect]
-  );
+    let state = SignupStates.ERR_UNKNOWN;
+    state = await signupEmailPass(email, password1, password2, name);
+
+    switch (state) {
+      case SignupStates.SUCCESS:
+        toast.success("Sign-Up successful!", { id: "signUpEmailPassToast" });
+        logger.info({ email }, "Sign-Up successful");
+        router.push(redirectUrl);
+        break;
+      default:
+        toast.error(stateToMessage(state), {
+          id: "signUpEmailPassToast"
+        });
+        break;
+    }
+  };
 
   useEffect(() => {
     setVariant("minimal");

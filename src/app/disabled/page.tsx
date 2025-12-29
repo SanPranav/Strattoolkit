@@ -1,20 +1,19 @@
 import { Ban } from "lucide-react";
 
 import { ErrorStateCard } from "@/components/ErrorStateCard";
-import { sanitizeInternalPath } from "@/lib/utils";
+import { isValidPathname, sanitizePathname } from "@/lib/utils";
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | undefined }>;
 };
 
 export default async function DisabledPage({ searchParams }: Props) {
-  const { page } = await searchParams;
+  const { next } = await searchParams;
 
-  const safePage = sanitizeInternalPath(page);
-  const retryHref = safePage ?? "/";
-  const titleContent = safePage ? (
+  const nextPage = sanitizePathname(next ?? "/");
+  const titleContent = next ? (
     <>
-      <span className="font-bold">{safePage}</span> Disabled
+      <span className="font-bold">{next}</span> Disabled
     </>
   ) : (
     "Page Disabled"
@@ -28,13 +27,11 @@ export default async function DisabledPage({ searchParams }: Props) {
       title={titleContent}
       description={
         <>
-          <span className={safePage ? "font-bold" : ""}>
-            {safePage ?? "This page"}
-          </span>{" "}
+          <span className={next ? "font-bold" : ""}>{next ?? "This page"}</span>{" "}
           is unavailable. If you believe this is a mistake, please let us know.
         </>
       }
-      retryHref={retryHref}
+      retryHref={nextPage}
       retryLabel="Try Again"
       dividerLabel="Need assistance?"
     />

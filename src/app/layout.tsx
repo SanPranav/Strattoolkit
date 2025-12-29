@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 
@@ -7,6 +8,8 @@ import NavbarTip from "@/components/NavbarTip";
 import { QueryProvider } from "@/components/QueryProvider";
 
 import "./globals.css";
+import GoogleOneTap from "../components/GoogleOneTap";
+import FullPageLoader from "@/components/FullPageLoader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,10 +38,12 @@ export default function RootLayout({
           <main className={`w-full ${geistSans.className} antialiased`}>
             <Navbar />
             <NavbarTip />
-            {children}
+            <Suspense fallback={<FullPageLoader />}>{children}</Suspense>
           </main>
           <Toaster richColors closeButton />
         </QueryProvider>
+
+        {/* <GoogleOneTap /> */}
       </body>
     </html>
   );

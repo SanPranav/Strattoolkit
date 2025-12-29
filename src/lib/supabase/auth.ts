@@ -2,6 +2,7 @@ import { BaseStates, LoginStates, SignupStates } from "../types/states";
 import { logger } from "../logger";
 import { getSBBrowserClient } from "./sbClient";
 import { AuthApiError } from "@supabase/supabase-js";
+import { buildURL } from "../utils";
 
 function validateEmail(value: string) {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,14 +57,24 @@ export async function loginEmailPass(
 
 export async function loginOAuth(
   provider: "google" | "discord",
-  redirectRoute?: URL
+  redirectRoute?: string
 ): Promise<BaseStates> {
   const supabase = getSBBrowserClient();
+
+  const redirectUrl = buildURL(
+    "/api/auth/callback",
+    process.env.NEXT_PUBLIC_APP_URL ||
+      window.location.origin ||
+      "https://tk.team3749.com",
+    {
+      next: redirectRoute || "/"
+    }
+  );
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: redirectRoute?.toString()
+      redirectTo: redirectUrl.toString()
     }
   });
 

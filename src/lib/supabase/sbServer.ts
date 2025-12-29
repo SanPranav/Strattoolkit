@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { assertEnv } from "../utils";
 import { Database } from "../types/supabase";
@@ -18,6 +19,18 @@ export const getSBServerClient = (cookies: CookieStore) => {
     cookies: {
       getAll: cookies.getAll,
       setAll: cookies.setAll
+    }
+  });
+};
+
+export const getSBServerClientWithNextJSCookies = async () => {
+  const cookieStore = await cookies();
+  return getSBServerClient({
+    getAll: () => {
+      return cookieStore.getAll();
+    },
+    setAll(cookiesToSet) {
+      cookiesToSet.forEach(({ name, value }) => cookieStore.set(name, value));
     }
   });
 };
