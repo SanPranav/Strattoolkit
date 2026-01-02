@@ -20,19 +20,23 @@ export async function fetchOutreachEvents(): Promise<
 
 export async function createOutreachEvent(
   payload: Pick<ActivityEvent, "event_name" | "event_date" | "minutes_cap">
-): Promise<[string | null, ActivityEvent | null]> {
+) {
   const { data, error } = await makeSBRequest(async (sb) =>
-    sb.from("ActivityEvents").insert({
-      ...payload,
-      activity_type: "outreach"
-    })
+    sb
+      .from("ActivityEvents")
+      .insert({
+        ...payload,
+        activity_type: "outreach"
+      })
+      .select()
+      .maybeSingle()
   );
 
-  if (error || !data) {
-    return [error?.message ?? "Failed to create event", null];
+  if (error) {
+    return [error?.message ?? "Failed to create event", null] as const;
   }
 
-  return [null, data];
+  return [null, data] as const;
 }
 
 export async function updateOutreachEvent(

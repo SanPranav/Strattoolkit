@@ -57,9 +57,7 @@ export default function CreateEventDialog({
 
     setLoading(true);
     try {
-      const minutes_cap = formData.minutesCap.trim()
-        ? Number(formData.minutesCap.trim())
-        : null;
+      const minutes_cap = Number(formData.minutesCap.trim()) || null;
 
       const [error, created] = await createOutreachEvent({
         event_name: formData.name,
