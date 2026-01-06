@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useCallback, useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useUser } from "@/hooks/useUser";
-import { toast } from "sonner";
+import { useIsMounted } from "@/hooks/useIsMounted";
 
 function getInitials(name: string) {
   if (!name) return "?";
@@ -22,11 +23,12 @@ function getInitials(name: string) {
 
 export function ProfileSettings() {
   const [formData, setFormData] = useState({
-    name: "Optix Member",
+    name: "Unknown",
     email: ""
   });
 
   const { user, isLoading } = useUser();
+  const isMounted = useIsMounted();
 
   const handleReset = useCallback(() => {
     if (!isLoading && user) {
@@ -56,7 +58,7 @@ export function ProfileSettings() {
 
   const handleChangeAvatar = () => {
     toast.warning("Changing avatars is under construction!");
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -72,14 +74,18 @@ export function ProfileSettings() {
             </Avatar>
             <div>
               <h2 className="text-lg font-semibold leading-none">
-                {user?.user_name ?? "Unknown"}
+                {!isMounted || isLoading ? "Loading..." : user?.user_name}
               </h2>
               <p className="text-muted-foreground mt-1 text-sm">
                 This information will be visible to your team in the toolkit.
               </p>
             </div>
           </div>
-          <Button onClick={handleChangeAvatar} variant="outline" size="sm" type="button">
+          <Button
+            onClick={handleChangeAvatar}
+            variant="outline"
+            size="sm"
+            type="button">
             Change avatar
           </Button>
         </div>
@@ -116,7 +122,11 @@ export function ProfileSettings() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="role">Role</Label>
-              <Input id="role" value={user?.user_role ?? "Unknown"} disabled />
+              <Input
+                id="role"
+                value={isLoading ? "Loading..." : user?.user_role ?? "Unknown"}
+                disabled
+              />
             </div>
           </div>
 

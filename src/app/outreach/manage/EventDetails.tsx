@@ -6,8 +6,6 @@ import { formatDateTimeLA } from "@/lib/datetime";
 import type {
   ActivityEvent,
   ActivitySession,
-  OutreachEvent,
-  OutreachSession
 } from "@/lib/types/db";
 
 type Totals = { raw: number; credited: number };

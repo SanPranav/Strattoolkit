@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronsUpDown, Pencil, Plus, Trash2 } from "lucide-react";
@@ -37,33 +37,30 @@ import {
   fetchAllRBACRules,
   updateRBACRule
 } from "@/lib/rbac/rbac";
-import type {
-  Action,
-  Condition,
-  RBACRule,
-  RBACRuleInsert,
-  RBACRuleUpdate,
-  Resource,
-  UserRole
+import {
+  Actions,
+  Conditions,
+  Resources,
+  type Action,
+  type Condition,
+  type RBACRule,
+  type RBACRuleInsert,
+  type RBACRuleUpdate,
+  type Resource,
+  type UserRole
 } from "@/lib/types/rbac";
 
 const ROLE_OPTIONS: UserRole[] = ["admin", "member", "guest"];
-const RESOURCE_OPTIONS: Resource[] = [
-  "outreach",
-  "settings",
-  "scouting",
-  "users",
-  "rbac"
-];
-const ACTION_OPTIONS: Action[] = [
-  "view",
-  "manage",
-  "edit",
-  "submit",
-  "delete",
-  "create"
-];
-const CONDITION_OPTIONS: Condition[] = ["own", "all", null];
+const RESOURCE_OPTIONS = Resources;
+const ACTION_OPTIONS = Actions;
+const CONDITION_OPTIONS = Conditions;
+
+const DEFAULT_RULE: RuleFormValues = {
+  user_role: "member",
+  resource: "activity_events",
+  action: "view",
+  condition: null
+};
 
 type RuleFormValues = {
   user_role: UserRole;
@@ -72,16 +69,8 @@ type RuleFormValues = {
   condition: Condition;
 };
 
-function toFormValues(rule?: RBACRule): RuleFormValues {
-  if (!rule) {
-    return {
-      user_role: "guest",
-      resource: "outreach",
-      action: "view",
-      condition: null
-    };
-  }
-
+function toFormValues(rule: RBACRule | null): RuleFormValues {
+  if (!rule) return DEFAULT_RULE;
   return {
     user_role: rule.user_role as UserRole,
     resource: rule.resource as Resource,
@@ -90,9 +79,15 @@ function toFormValues(rule?: RBACRule): RuleFormValues {
   };
 }
 
+function capitalize(str: string | null): string {
+  if (!str) return "None";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function ConditionLabel({ condition }: { condition: Condition }) {
-  if (condition === null)
+  if (condition === null) {
     return <span className="text-muted-foreground">—</span>;
+  }
   return <span className="capitalize">{condition}</span>;
 }
 
@@ -100,7 +95,7 @@ type AutocompleteProps<T extends string | null> = {
   label: string;
   placeholder?: string;
   value: T;
-  options: { label: string; value: T }[];
+  options: readonly { label: string; value: T }[];
   onChange: (value: T) => void;
   disabled?: boolean;
 };
@@ -162,7 +157,7 @@ function AutocompleteField<T extends string | null>({
 type RuleDialogProps = {
   mode: "create" | "edit";
   open: boolean;
-  initialRule?: RBACRule;
+  initialRule: RBACRule | null;
   onClose: () => void;
   onSubmit: (values: RuleFormValues) => Promise<void>;
   submitting: boolean;
@@ -176,18 +171,50 @@ function RuleDialog({
   onSubmit,
   submitting
 }: RuleDialogProps) {
-  const [values, setValues] = useState<RuleFormValues>(
+  const [values, setValues] = useState<RuleFormValues>(() =>
     toFormValues(initialRule)
   );
 
   useEffect(() => {
-    setValues(toFormValues(initialRule));
-  }, [initialRule]);
+    if (open) {
+      setValues(toFormValues(initialRule));
+    }
+  }, [initialRule, open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     await onSubmit(values);
   };
+
+  const roleOptions = useMemo(
+    () =>
+      ROLE_OPTIONS.map((role) => ({ label: capitalize(role), value: role })),
+    []
+  );
+  const resourceOptions = useMemo(
+    () =>
+      RESOURCE_OPTIONS.map((resource) => ({
+        label: capitalize(resource),
+        value: resource
+      })),
+    []
+  );
+  const actionOptions = useMemo(
+    () =>
+      ACTION_OPTIONS.map((action) => ({
+        label: capitalize(action),
+        value: action
+      })),
+    []
+  );
+  const conditionOptions = useMemo(
+    () =>
+      CONDITION_OPTIONS.map((condition) => ({
+        label: capitalize(condition),
+        value: condition
+      })),
+    []
+  );
 
   return (
     <Dialog
@@ -214,10 +241,7 @@ function RuleDialog({
             onChange={(value) =>
               setValues((prev) => ({ ...prev, user_role: value }))
             }
-            options={ROLE_OPTIONS.map((role) => ({
-              label: role.charAt(0).toUpperCase() + role.slice(1),
-              value: role
-            }))}
+            options={roleOptions}
           />
           <AutocompleteField<Resource>
             label="Resource"
@@ -225,10 +249,7 @@ function RuleDialog({
             onChange={(value) =>
               setValues((prev) => ({ ...prev, resource: value }))
             }
-            options={RESOURCE_OPTIONS.map((resource) => ({
-              label: resource.charAt(0).toUpperCase() + resource.slice(1),
-              value: resource
-            }))}
+            options={resourceOptions}
           />
           <AutocompleteField<Action>
             label="Action"
@@ -236,10 +257,7 @@ function RuleDialog({
             onChange={(value) =>
               setValues((prev) => ({ ...prev, action: value }))
             }
-            options={ACTION_OPTIONS.map((action) => ({
-              label: action.charAt(0).toUpperCase() + action.slice(1),
-              value: action
-            }))}
+            options={actionOptions}
           />
           <AutocompleteField<Condition>
             label="Condition"
@@ -247,12 +265,7 @@ function RuleDialog({
             onChange={(value) =>
               setValues((prev) => ({ ...prev, condition: value }))
             }
-            options={CONDITION_OPTIONS.map((condition) => ({
-              label: condition
-                ? condition.charAt(0).toUpperCase() + condition.slice(1)
-                : "None",
-              value: condition
-            }))}
+            options={conditionOptions}
           />
           <DialogFooter>
             <Button
@@ -302,14 +315,14 @@ function DeleteDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="text-sm">
-          {rule ? (
+          {rule && (
             <p>
               <strong>Role:</strong> {rule.user_role} ·{" "}
               <strong>Resource:</strong> {rule.resource} ·{" "}
               <strong>Action:</strong> {rule.action} ·{" "}
               <strong>Condition:</strong> {rule.condition ?? "None"}
             </p>
-          ) : null}
+          )}
         </div>
         <DialogFooter>
           <Button
@@ -331,6 +344,139 @@ function DeleteDialog({
   );
 }
 
+type RuleCardProps = {
+  rule: RBACRule;
+  isDragging: boolean;
+  canEdit: boolean;
+  onDragStart: (id: number) => void;
+  onDragEnd: () => void;
+  onEdit: (rule: RBACRule) => void;
+  onDelete: (rule: RBACRule) => void;
+};
+
+function RuleCard({
+  rule,
+  isDragging,
+  canEdit,
+  onDragStart,
+  onDragEnd,
+  onEdit,
+  onDelete
+}: RuleCardProps) {
+  return (
+    <Card
+      className="border-border/70 bg-card/80 p-3 space-y-2 shadow-sm cursor-grab active:cursor-grabbing"
+      draggable={canEdit}
+      onDragStart={(event) => {
+        event.dataTransfer.setData("rbac-rule-id", String(rule.id));
+        onDragStart(rule.id);
+      }}
+      onDragEnd={onDragEnd}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold capitalize">
+            {rule.resource} · {rule.action}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Condition:{" "}
+            <ConditionLabel condition={(rule.condition as Condition) ?? null} />
+          </p>
+        </div>
+        <div className="flex gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onEdit(rule)}
+            disabled={!canEdit}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => onDelete(rule)}
+            disabled={!canEdit}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      {isDragging && (
+        <p className="text-[10px] text-muted-foreground">
+          Drag to move to another role
+        </p>
+      )}
+    </Card>
+  );
+}
+
+type RoleColumnProps = {
+  role: UserRole;
+  rules: RBACRule[];
+  draggingId: number | null;
+  canEdit: boolean;
+  onDragStart: (id: number) => void;
+  onDragEnd: () => void;
+  onDrop: (id: number) => void;
+  onEdit: (rule: RBACRule) => void;
+  onDelete: (rule: RBACRule) => void;
+};
+
+function RoleColumn({
+  role,
+  rules,
+  draggingId,
+  canEdit,
+  onDragStart,
+  onDragEnd,
+  onDrop,
+  onEdit,
+  onDelete
+}: RoleColumnProps) {
+  return (
+    <Card
+      className="border-border/70 bg-card/50 p-4 flex flex-col gap-3"
+      onDragOver={(event) => {
+        if (!canEdit) return;
+        event.preventDefault();
+      }}
+      onDrop={(event) => {
+        if (!canEdit) return;
+        event.preventDefault();
+        const id = Number(event.dataTransfer.getData("rbac-rule-id"));
+        if (!isNaN(id)) onDrop(id);
+      }}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            Role
+          </p>
+          <p className="text-lg font-semibold capitalize">{role}</p>
+        </div>
+        <Badge variant="secondary">{rules.length} rules</Badge>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {rules.map((rule) => (
+          <RuleCard
+            key={rule.id}
+            rule={rule}
+            isDragging={draggingId === rule.id}
+            canEdit={canEdit}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+        {rules.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            No rules for this role.
+          </p>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 type RbacRulesPanelProps = {
   canEdit: boolean;
 };
@@ -340,6 +486,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
   const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
   const [selectedRule, setSelectedRule] = useState<RBACRule | null>(null);
   const [showDelete, setShowDelete] = useState(false);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
 
   const { data: rules, isLoading } = useQuery({
     queryKey: ["rbac", "rules"],
@@ -349,7 +496,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
   const createMutation = useMutation({
     mutationFn: async (values: RBACRuleInsert) => {
       const [error] = await createRBACRule(values);
-      if (error) console.log(error);
+      if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
       toast.success("Rule created");
@@ -369,7 +516,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
       values: RBACRuleUpdate;
     }) => {
       const [error] = await updateRBACRule(id, values);
-      if (error) console.log(error);
+      if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
       toast.success("Rule updated");
@@ -383,7 +530,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       const [error] = await deleteRBACRule(id);
-      if (error) console.log(error);
+      if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
       toast.success("Rule deleted");
@@ -394,22 +541,25 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
     }
   });
 
-  const closeDialog = () => {
+  const closeDialog = useCallback(() => {
     setDialogMode(null);
     setSelectedRule(null);
-  };
+  }, []);
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     setSelectedRule(null);
     setDialogMode("create");
-  };
+  }, []);
 
-  const openEdit = (rule: RBACRule) => {
+  const openEdit = useCallback((rule: RBACRule) => {
     setSelectedRule(rule);
     setDialogMode("edit");
-  };
+  }, []);
 
-  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const openDeleteConfirm = useCallback((rule: RBACRule) => {
+    setSelectedRule(rule);
+    setShowDelete(true);
+  }, []);
 
   const handleSubmit = async (values: RuleFormValues) => {
     if (dialogMode === "create") {
@@ -427,11 +577,8 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
     setSelectedRule(null);
   };
 
-  const actionDisabled = !canEdit;
-
   const handleMove = async (rule: RBACRule, targetRole: UserRole) => {
-    if (actionDisabled) return;
-    if (rule.user_role === targetRole) return;
+    if (!canEdit || rule.user_role === targetRole) return;
     setDraggingId(rule.id);
     try {
       await updateMutation.mutateAsync({
@@ -443,32 +590,32 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
     }
   };
 
-  const doRulesExist = useMemo(() => {
-    if (!rules) return false;
-
-    for (const role in rules) {
-      if (rules[role as UserRole]?.length || 0 > 0) return true;
-    }
-    return false;
+  const totalRulesCount = useMemo(() => {
+    if (!rules) return 0;
+    return Object.values(rules).reduce(
+      (sum, roleRules) => sum + (roleRules?.length ?? 0),
+      0
+    );
   }, [rules]);
 
-  const getRulesForRole = (role: UserRole) => {
-    if (!doRulesExist) return [];
+  const getRulesForRole = useCallback(
+    (role: UserRole): RBACRule[] => {
+      return rules?.[role] ?? [];
+    },
+    [rules]
+  );
 
-    return (rules as Record<UserRole, RBACRule[]>)[role] || [];
-  };
-
-  const getRuleById = (id: number) => {
-    if (!doRulesExist) return null;
-
-    for (const role in rules) {
-      const found = (rules as Record<UserRole, RBACRule[]>)[
-        role as UserRole
-      ]?.find((rule) => rule.id === id);
-      if (found) return found;
-    }
-    return null;
-  };
+  const getRuleById = useCallback(
+    (id: number): RBACRule | null => {
+      if (!rules) return null;
+      for (const role of ROLE_OPTIONS) {
+        const found = rules[role]?.find((rule) => rule.id === id);
+        if (found) return found;
+      }
+      return null;
+    },
+    [rules]
+  );
 
   return (
     <Card className="border-border/70 bg-card/60 p-6">
@@ -479,7 +626,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
             Move rules between roles or manage rule definitions.
           </p>
         </div>
-        <Button onClick={openCreate} disabled={actionDisabled}>
+        <Button onClick={openCreate} disabled={!canEdit}>
           <Plus className="mr-2 h-4 w-4" /> Add rule
         </Button>
       </div>
@@ -488,95 +635,24 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
         <div className="flex h-48 items-center justify-center">
           <Loader />
         </div>
-      ) : doRulesExist ? (
+      ) : totalRulesCount > 0 ? (
         <div className="grid gap-3 md:grid-cols-3">
-          {(["admin", "member", "guest"] as UserRole[]).map((role) => (
-            <Card
+          {ROLE_OPTIONS.map((role) => (
+            <RoleColumn
               key={role}
-              className="border-border/70 bg-card/50 p-4 flex flex-col gap-3"
-              onDragOver={(event) => {
-                if (actionDisabled) return;
-                event.preventDefault();
-              }}
-              onDrop={(event) => {
-                if (actionDisabled) return;
-                event.preventDefault();
-                const id = Number(event.dataTransfer.getData("rbac-rule-id"));
+              role={role}
+              rules={getRulesForRole(role)}
+              draggingId={draggingId}
+              canEdit={canEdit}
+              onDragStart={setDraggingId}
+              onDragEnd={() => setDraggingId(null)}
+              onDrop={(id) => {
                 const droppedRule = getRuleById(id);
                 if (droppedRule) handleMove(droppedRule, role);
-              }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    Role
-                  </p>
-                  <p className="text-lg font-semibold capitalize">{role}</p>
-                </div>
-                <Badge variant="secondary">
-                  {getRulesForRole(role).length ?? 0} rules
-                </Badge>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {getRulesForRole(role).map((rule) => (
-                  <Card
-                    key={rule.id}
-                    className="border-border/70 bg-card/80 p-3 space-y-2 shadow-sm"
-                    draggable={!actionDisabled}
-                    onDragStart={(event) => {
-                      event.dataTransfer.setData(
-                        "rbac-rule-id",
-                        String(rule.id)
-                      );
-                      setDraggingId(rule.id);
-                    }}
-                    onDragEnd={() => setDraggingId(null)}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold capitalize">
-                          {rule.resource} · {rule.action}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Condition:{" "}
-                          <ConditionLabel
-                            condition={(rule.condition as Condition) ?? null}
-                          />
-                        </p>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => openEdit(rule)}
-                          disabled={actionDisabled}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedRule(rule);
-                            setShowDelete(true);
-                          }}
-                          disabled={actionDisabled}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    {draggingId === rule.id && (
-                      <p className="text-[10px] text-muted-foreground">
-                        Drag to move to another role
-                      </p>
-                    )}
-                  </Card>
-                ))}
-                {getRulesForRole(role).length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    No rules for this role.
-                  </p>
-                )}
-              </div>
-            </Card>
+              }}
+              onEdit={openEdit}
+              onDelete={openDeleteConfirm}
+            />
           ))}
         </div>
       ) : (
@@ -586,7 +662,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
             variant="outline"
             size="sm"
             onClick={openCreate}
-            disabled={actionDisabled}>
+            disabled={!canEdit}>
             Add your first rule
           </Button>
         </div>
@@ -595,9 +671,7 @@ export function RBACRulesPanel({ canEdit }: RbacRulesPanelProps) {
       <RuleDialog
         mode={dialogMode === "create" ? "create" : "edit"}
         open={Boolean(dialogMode)}
-        initialRule={
-          dialogMode === "edit" ? selectedRule ?? undefined : undefined
-        }
+        initialRule={dialogMode === "edit" ? selectedRule : null}
         onClose={closeDialog}
         onSubmit={handleSubmit}
         submitting={createMutation.isPending || updateMutation.isPending}

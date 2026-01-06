@@ -1,12 +1,9 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js";
-import type { Enums, Tables } from "./supabase";
+import type { Enums, Tables } from "./supabase.gen";
 
 export type User = SupabaseUser;
 export type UserData = Tables<"UserData">;
 export type FullUserData = User & UserData & ActivitySummary;
-
-export type OutreachEvent = Tables<"OutreachEvents">;
-export type OutreachSession = Tables<"OutreachSessions">;
 
 export type ActivityEvent = Tables<"ActivityEvents">;
 export type ActivitySession = Tables<"ActivitySessions">;

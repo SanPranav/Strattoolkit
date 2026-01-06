@@ -24,8 +24,6 @@ import { Clock, Trash2 } from "lucide-react";
 import type {
   ActivityEvent,
   ActivitySession,
-  OutreachEvent,
-  OutreachSession
 } from "@/lib/types/db";
 import { UserInfo } from "@/components/UserInfo";
 

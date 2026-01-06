@@ -40,6 +40,7 @@
     "pino-pretty": "^13.1.2",
     "pocketbase": "^0.26.0",
     "posthog-js": "^1.302.2",
+    "posthog-node": "^5.19.0",
     "react": "^19.0.0",
     "react-day-picker": "^9.10.0",
     "react-dom": "^19.0.0",

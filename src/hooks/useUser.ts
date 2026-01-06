@@ -1,64 +1,55 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSBBrowserClient } from "@/lib/supabase/sbClient";
 
-import type { FullUserData, User } from "@/lib/types/db";
+import type { FullUserData } from "@/lib/types/db";
 import { getUserDataWithUserId } from "@/lib/db/user";
 import { fetchUserActivitySummary } from "@/lib/db/activity";
+import { USER } from "@/lib/types/queryKeys";
+
+const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
 
 export function useUser() {
   const supabase = getSBBrowserClient();
   const queryClient = useQueryClient();
 
-  const combineUserData = useCallback(async (user: User) => {
-    const [error, userData] = await getUserDataWithUserId(user?.id || "");
-    const [activityError, activity] = await fetchUserActivitySummary(
-      user?.id || "",
-      ["build", "outreach"]
-    );
-
-    if (error || !userData) {
-      return;
-    }
-
-    const union = {
-      ...user,
-      ...userData,
-      ...activity
-    } as FullUserData;
-
-    if (activityError) {
-      // Activity data is optional; ignore errors silently for now
-      return union;
-    }
-
-    return union;
-  }, []);
-
   const { data: user, isLoading } = useQuery<FullUserData | null>({
-    queryKey: ["auth", "user"],
+    queryKey: USER.AUTH_USER,
     queryFn: async () => {
-      const userRes = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getUser();
 
-      if (userRes.error || !userRes.data.user) {
+      if (error || !data.user) {
         return null;
       }
 
-      const combinedUser = await combineUserData(userRes.data.user);
-      return combinedUser || null;
+      const userId = data.user.id;
+      const [[userError, userData], [, activity]] = await Promise.all([
+        getUserDataWithUserId(userId),
+        fetchUserActivitySummary(userId, ["build", "outreach"])
+      ]);
+
+      if (userError || !userData) {
+        return null;
+      }
+
+      return {
+        ...data.user,
+        ...userData,
+        ...activity
+      } as FullUserData;
     },
-    staleTime: Infinity,
+    staleTime: CACHE_TIME,
     refetchOnWindowFocus: false
   });
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange(() => {
-      queryClient.invalidateQueries({ queryKey: ["auth", "user"] });
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange(() => {
+      queryClient.invalidateQueries({ queryKey: USER.AUTH_USER });
     });
 
-    return () => {
-      data.subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, [queryClient, supabase]);
 
   return { user, isLoading } as const;

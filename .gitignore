@@ -2,8 +2,6 @@
 
 /src/app/testing
 Dockerfile
-otoolkit-sb
-
 # dependencies
 /node_modules
 /.pnp

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavbar } from "@/hooks/useNavbar";
-import { useIsMounted } from "@/hooks/useIsHydrated";
+import { useIsMounted } from "@/hooks/useIsMounted";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUser } from "@/hooks/useUser";
 import { hasPermission } from "@/lib/rbac/rbac";
@@ -25,8 +25,14 @@ export default function OutreachPage() {
   const { data: canManageData, isLoading: isCanManageLoading } = useQuery({
     queryKey: USER.CAN_MANAGE_OUTREACH(userData?.user_id || ""),
     queryFn: () => {
-      return hasPermission(userData?.user_role || "guest", "outreach:manage");
-    }
+      console.log("Checking canManage outreach for user:", userData?.user_role);
+
+      return hasPermission(
+        userData?.user_role || "guest",
+        "activity_events:manage"
+      );
+    },
+    enabled: !isUserLoading
   });
   const {
     data: outreachMinutesThreshold,

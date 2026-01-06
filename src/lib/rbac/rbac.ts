@@ -2,9 +2,11 @@
 
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { makeSBRequest } from "../supabase/supabase";
+import { getSBSuperuserClient } from "../supabase/sbServer";
 import { logger } from "../logger";
 import type {
   Permission,
+  PermissionRule,
   PermissionString,
   RBACRule,
   RBACRuleInsert,
@@ -34,12 +36,8 @@ export async function fetchPermissionsForRole(
   }
 
   const { data, error } = await makeSBRequest(
-    async (sb) =>
-      sb
-        .from("rbac")
-        .select("resource, action, condition")
-        .eq("user_role", role),
-    client
+    async (sb) => sb.from("rbac").select("*").eq("user_role", role),
+    client ?? getSBSuperuserClient()
   );
 
   if (error) {
@@ -66,8 +64,10 @@ export async function fetchPermissionsForRole(
 export async function fetchAllRBACRules(): Promise<Partial<
   Record<UserRole, RBACRule[]>
 > | null> {
-  const { data, error } = await makeSBRequest(async (sb) =>
-    sb.from("rbac").select("*").order("user_role", { ascending: true })
+  const { data, error } = await makeSBRequest(
+    async (sb) =>
+      sb.from("rbac").select("*").order("user_role", { ascending: true }),
+    getSBSuperuserClient()
   );
 
   if (error) {
@@ -93,17 +93,19 @@ export async function fetchAllRBACRules(): Promise<Partial<
 export async function createRBACRule(
   rule: RBACRuleInsert
 ): Promise<ErrorOrData<RBACRule, PostgrestError>> {
-  const { data, error } = await makeSBRequest(async (sb) =>
-    sb
-      .from("rbac")
-      .insert({
-        user_role: rule.user_role,
-        resource: rule.resource,
-        action: rule.action,
-        condition: rule.condition ?? null
-      })
-      .select("*")
-      .maybeSingle()
+  const { data, error } = await makeSBRequest(
+    async (sb) =>
+      sb
+        .from("rbac")
+        .insert({
+          user_role: rule.user_role,
+          resource: rule.resource,
+          action: rule.action,
+          condition: rule.condition ?? null
+        })
+        .select("*")
+        .maybeSingle(),
+    getSBSuperuserClient()
   );
 
   if (error || !data) {
@@ -133,8 +135,15 @@ export async function updateRBACRule(
   if (rule.action !== undefined) updatePayload.action = rule.action;
   if (rule.condition !== undefined) updatePayload.condition = rule.condition;
 
-  const { data, error } = await makeSBRequest(async (sb) =>
-    sb.from("rbac").update(updatePayload).eq("id", id).select("*").maybeSingle()
+  const { data, error } = await makeSBRequest(
+    async (sb) =>
+      sb
+        .from("rbac")
+        .update(updatePayload)
+        .eq("id", id)
+        .select("*")
+        .maybeSingle(),
+    getSBSuperuserClient()
   );
 
   if (error || !data) {
@@ -157,7 +166,9 @@ export async function deleteRBACRule(
   id: number
 ): Promise<ErrorOrData<"SUCCESS", PostgrestError>> {
   const { data: ruleToDelete, error: fetchError } = await makeSBRequest(
-    async (sb) => sb.from("rbac").select("user_role").eq("id", id).maybeSingle()
+    async (sb) =>
+      sb.from("rbac").select("user_role").eq("id", id).maybeSingle(),
+    getSBSuperuserClient()
   );
 
   if (fetchError) {
@@ -168,8 +179,9 @@ export async function deleteRBACRule(
     return [fetchError, null];
   }
 
-  const { error } = await makeSBRequest(async (sb) =>
-    sb.from("rbac").delete().eq("id", id)
+  const { error } = await makeSBRequest(
+    async (sb) => sb.from("rbac").delete().eq("id", id),
+    getSBSuperuserClient()
   );
 
   if (error) {
@@ -186,7 +198,7 @@ export async function deleteRBACRule(
   return [null, "SUCCESS"];
 }
 
-export async function hasPermission(
+export async function checkPermission(
   role: UserRole,
   permission: PermissionString,
   client?: SupabaseClient
@@ -211,4 +223,31 @@ export async function hasPermission(
   );
 
   return hasPermission;
+}
+
+export async function hasPermission(
+  role: UserRole,
+  permission: PermissionRule,
+  client?: SupabaseClient
+): Promise<boolean> {
+  if (typeof permission === "string") {
+    return checkPermission(role, permission, client);
+  }
+
+  const { permissions, type } = permission;
+
+  const permissionsMap = Promise.all(
+    permissions.map((perm) => checkPermission(role, perm, client))
+  );
+  if (type === "and") {
+    return permissionsMap.then((results) => results.every(Boolean));
+  } else if (type === "or") {
+    return permissionsMap.then((results) => results.some(Boolean));
+  } else {
+    logger.error(
+      { permission },
+      "[RBAC] Invalid permission rule type. Expected 'and' or 'or'."
+    );
+    return false;
+  }
 }

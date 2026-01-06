@@ -1,10 +1,11 @@
 import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
 
-import { hasPermission } from "./lib/rbac/rbac";
 import { getSBServerClient } from "./lib/supabase/sbServer";
 import { UserRole } from "./lib/types/rbac";
-import { getRequiredPermissionsForRoute } from "./lib/rbac/routePermissions";
-import { ensureRoutePermissionsInitialized } from "./lib/rbac/routePermissionsInit";
+import {
+  checkPermissionsForRoute,
+  syncRoutePermissionsWithTTL
+} from "./lib/rbac/routePermissions";
 import { logger } from "./lib/logger";
 import { sanitizePathname } from "./lib/utils";
 
@@ -16,7 +17,8 @@ export async function middleware(request: NextRequest) {
     return posthogMiddleware(request);
   }
 
-  await ensureRoutePermissionsInitialized();
+  // Sync route permissions from feature flag (with TTL to avoid excessive calls)
+  await syncRoutePermissionsWithTTL();
 
   let response = NextResponse.next({
     request
@@ -71,30 +73,18 @@ export async function middleware(request: NextRequest) {
     "[Middleware] Resolved request role"
   );
 
-  const requiredPermissions = await getRequiredPermissionsForRoute(segments);
-
-  if (!requiredPermissions) {
-    logger.debug({ path: originalPath }, "[Middleware] No RBAC for route");
-    return response;
-  }
-
-  const hasAllRequiredPermissions = await Promise.all(
-    requiredPermissions.map((permission) =>
-      hasPermission(role, permission, supabase)
-    )
-  ).then((results) => results.every(Boolean));
+  const hasPermission = await checkPermissionsForRoute(originalPath, role);
 
   logger.debug(
     {
       path: originalPath,
       role,
-      requiredPermissions,
-      allowed: hasAllRequiredPermissions
+      allowed: hasPermission
     },
     "[Middleware] Permission evaluation result"
   );
 
-  if (!hasAllRequiredPermissions) {
+  if (!hasPermission) {
     if (user?.id) {
       logger.debug(
         { path: originalPath, role, userId: user.id },
@@ -111,7 +101,6 @@ export async function middleware(request: NextRequest) {
     );
 
     const next = sanitizePathname(request.nextUrl.pathname);
-    console.log(next);
 
     return mwRedirect(response, request.nextUrl.clone(), "/auth/login", {
       next

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useIsMounted } from "@/hooks/useIsHydrated";
+import { useIsMounted } from "@/hooks/useIsMounted";
 import { useNavbar } from "@/hooks/useNavbar";
 import { loginEmailPass, loginOAuth } from "@/lib/supabase/auth";
 import { BaseStates, LoginStates, stateToMessage } from "@/lib/types/states";

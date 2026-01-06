@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   serverExternalPackages: ["pino", "pino-pretty"],
-  skipTrailingSlashRedirect: true,  
+  skipTrailingSlashRedirect: true,
   eslint: {
     ignoreDuringBuilds: true
   }

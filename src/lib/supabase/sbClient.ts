@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import type { Database } from "@/lib/types/supabase";
+import type { Database } from "@/lib/types/supabase.gen";
 import { assertEnv } from "../utils";
 
 export function getSBBrowserClient() {

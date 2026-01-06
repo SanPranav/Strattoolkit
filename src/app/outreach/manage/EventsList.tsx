@@ -11,7 +11,7 @@ import LogHoursDialog from "./LogHoursDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { logger } from "@/lib/logger";
-import type { ActivityEvent, OutreachEvent } from "@/lib/types/db";
+import type { ActivityEvent } from "@/lib/types/db";
 
 interface EventsListProps {
   events: ActivityEvent[] | undefined;

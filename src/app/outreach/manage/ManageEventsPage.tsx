@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 import { useNavbar } from "@/hooks/useNavbar";
-import { useIsMounted } from "@/hooks/useIsHydrated";
+import { useIsMounted } from "@/hooks/useIsMounted";
 
 import Loader from "@/components/Loader";
 import ManageEventsContent from "./ManageEventsContent";

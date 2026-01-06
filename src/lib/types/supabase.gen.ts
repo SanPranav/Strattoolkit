@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
-  };
   graphql_public: {
     Tables: {
       [_ in never]: never;
@@ -108,125 +103,27 @@ export type Database = {
           }
         ];
       };
-      FeatureFlags: {
-        Row: {
-          flag: Json;
-          id: number;
-          name: string;
-        };
-        Insert: {
-          flag: Json;
-          id?: number;
-          name: string;
-        };
-        Update: {
-          flag?: Json;
-          id?: number;
-          name?: string;
-        };
-        Relationships: [];
-      };
-      OutreachEvents: {
-        Row: {
-          created_at: string;
-          date: string | null;
-          id: number;
-          name: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          date?: string | null;
-          id?: number;
-          name?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          date?: string | null;
-          id?: number;
-          name?: string | null;
-        };
-        Relationships: [];
-      };
-      OutreachSessions: {
-        Row: {
-          created_at: string;
-          event: string;
-          id: number;
-          minutes: number | null;
-          user: string;
-        };
-        Insert: {
-          created_at?: string;
-          event: string;
-          id?: number;
-          minutes?: number | null;
-          user: string;
-        };
-        Update: {
-          created_at?: string;
-          event?: string;
-          id?: number;
-          minutes?: number | null;
-          user?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "OutreachSessions_event_fkey";
-            columns: ["event"];
-            isOneToOne: false;
-            referencedRelation: "OutreachEvents";
-            referencedColumns: ["name"];
-          }
-        ];
-      };
       rbac: {
         Row: {
           action: string;
           condition: string | null;
-          created_at: string | null;
           id: number;
           resource: string;
-          updated_at: string | null;
           user_role: Database["public"]["Enums"]["user_role"];
         };
         Insert: {
           action: string;
           condition?: string | null;
-          created_at?: string | null;
           id?: number;
           resource: string;
-          updated_at?: string | null;
           user_role: Database["public"]["Enums"]["user_role"];
         };
         Update: {
           action?: string;
           condition?: string | null;
-          created_at?: string | null;
           id?: number;
           resource?: string;
-          updated_at?: string | null;
           user_role?: Database["public"]["Enums"]["user_role"];
-        };
-        Relationships: [];
-      };
-      Settings: {
-        Row: {
-          created_at: string;
-          id: number;
-          key: string;
-          value: Json | null;
-        };
-        Insert: {
-          created_at?: string;
-          id?: number;
-          key: string;
-          value?: Json | null;
-        };
-        Update: {
-          created_at?: string;
-          id?: number;
-          key?: string;
-          value?: Json | null;
         };
         Relationships: [];
       };
@@ -272,6 +169,10 @@ export type Database = {
       };
     };
     Functions: {
+      get_rbac_condition: {
+        Args: { requested_action: string; requested_resource: string };
+        Returns: string;
+      };
       get_user_role: {
         Args: { uid: string };
         Returns: Database["public"]["Enums"]["user_role"];

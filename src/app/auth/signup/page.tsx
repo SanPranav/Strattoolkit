@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useIsMounted } from "@/hooks/useIsHydrated";
+import { useIsMounted } from "@/hooks/useIsMounted";
 import { useNavbar } from "@/hooks/useNavbar";
 import { loginOAuth, signupEmailPass } from "@/lib/supabase/auth";
 import { sanitizePathname } from "@/lib/utils";

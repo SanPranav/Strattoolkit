@@ -4,13 +4,8 @@ import { useEffect, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import { RBACRulesPanel } from "./RBACRulesPanel";
-import { makeSBRequest } from "@/lib/supabase/supabase";
-import {
-  type Permission,
-  type PermissionString,
-  type UserRole
-} from "@/lib/types/rbac";
-import { matchesPermission, parsePermissionString } from "@/lib/rbac/matcher";
+import { hasPermission } from "@/lib/rbac/rbac";
+import { useUser } from "@/hooks/useUser";
 
 // Simple client-side load states for RBAC access
 type LoadState =
@@ -19,93 +14,38 @@ type LoadState =
   | { status: "forbidden" }
   | { status: "ready"; canEdit: boolean };
 
-async function fetchPermissions(role: UserRole): Promise<Permission[]> {
-  const { data, error } = await makeSBRequest(async (sb) =>
-    sb.from("rbac").select("resource, action, condition").eq("user_role", role)
-  );
-
-  if (error || !data) return [];
-
-  return data.map((row) => ({
-    resource: row.resource as Permission["resource"],
-    action: row.action as Permission["action"],
-    condition: (row.condition as Permission["condition"]) ?? null
-  }));
-}
-
-async function checkPermission(role: UserRole, permission: PermissionString) {
-  const permissions = await fetchPermissions(role);
-  const parsed = parsePermissionString(permission);
-
-  return permissions.some((perm) => matchesPermission(perm, parsed));
-}
-
 export function RBACSettings() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
+  const { user, isLoading } = useUser();
 
   useEffect(() => {
-    let cancelled = false;
-
     const load = async () => {
-      const { data: authData, error: authError } = await makeSBRequest(
-        async (sb) => sb.auth.getUser()
-      );
+      if (isLoading) return;
 
-      if (cancelled) return;
-
-      if (authError || !authData?.user) {
-        setState({
-          status: "error",
-          message: "Unable to load user data."
-        });
+      if (!user) {
+        setState({ status: "error", message: "User not found." });
         return;
       }
-
-      const { data: userData, error: userDataError } = await makeSBRequest(
-        async (sb) =>
-          sb
-            .from("UserData")
-            .select("user_role")
-            .eq("user_id", authData.user.id)
-            .limit(1)
-            .single()
-      );
-
-      if (cancelled) return;
-
-      if (userDataError || !userData) {
-        setState({ status: "error", message: "Unable to load user role." });
-        return;
-      }
-
-      const canView = await checkPermission(
-        userData.user_role as UserRole,
-        "settings:view:all"
-      );
-
-      if (cancelled) return;
+      const canView = await hasPermission(user.user_role, {
+        permissions: ["rbac:view", "rbac:manage"],
+        type: "or"
+      });
 
       if (!canView) {
         setState({ status: "forbidden" });
         return;
       }
 
-      const canEdit = await checkPermission(
-        userData.user_role as UserRole,
-        "rbac:manage"
-      );
-
-      if (cancelled) return;
+      const canEdit = await hasPermission(user.user_role, {
+        permissions: ["rbac:edit", "rbac:manage"],
+        type: "or"
+      });
 
       setState({ status: "ready", canEdit });
     };
 
     load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }, [isLoading, user]);
 
   if (state.status === "loading") {
     return (
