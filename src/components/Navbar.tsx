@@ -16,7 +16,8 @@ import {
   Clock,
   Menu,
   SearchCode,
-  LogOut
+  LogOut,
+  Hammer
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -60,8 +61,7 @@ const NAV_ITEMS: NavItem[] = [
     showInMinimal: true,
     icon: <UserIcon className="h-5 w-5" />,
     label: "Home",
-    url: "/",
-    msg: "To the homepage"
+    url: "/"
   },
   {
     icon: <SearchCode className="h-5 w-5" />,
@@ -74,10 +74,16 @@ const NAV_ITEMS: NavItem[] = [
     }
   },
   {
+    icon: <Hammer className="h-5 w-5" />,
+    label: "Build",
+    url: "/build",
+    msg: "its hammertime!"
+  },
+  {
     icon: <Clock className="h-5 w-5" />,
     label: "Outreach",
     url: "/outreach",
-    msg: "Opening outreach"
+    msg: "ew outreach :("
   }
 ];
 

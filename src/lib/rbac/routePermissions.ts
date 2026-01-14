@@ -17,6 +17,7 @@ const DEFAULT_ROUTE_PERMISSIONS = {
     type: "or"
   },
   "/outreach/manage": "activity_sessions:manage",
+  "/build/manage": "build_tasks:manage",
   "/settings": "settings:view:own"
 } satisfies RoutePermissionsMap;
 

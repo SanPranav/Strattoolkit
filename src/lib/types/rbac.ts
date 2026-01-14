@@ -16,6 +16,10 @@ export type RBACRuleUpdate = Partial<
 export const Resources = [
   "activity_events",
   "activity_sessions",
+  "build_tasks",
+  "build_sessions",
+  "build_locations",
+  "build_groups",
   "rbac",
   "user_data",
   "settings",
