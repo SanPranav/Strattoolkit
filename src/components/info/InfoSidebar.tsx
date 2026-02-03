@@ -41,11 +41,21 @@ const navigation = [
   },
 ];
 
-export function InfoSidebar() {
+interface InfoSidebarProps {
+  /** When true, sidebar is not fixed (e.g. inside a sheet/drawer) */
+  embedded?: boolean;
+}
+
+export function InfoSidebar({ embedded }: InfoSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 shrink-0 border-r border-sidebar-border bg-sidebar/50 overflow-y-auto">
+    <aside
+      className={cn(
+        "shrink-0 border-r border-sidebar-border bg-sidebar/50 overflow-y-auto",
+        embedded ? "w-full border-r-0" : "fixed left-0 top-0 h-screen w-64"
+      )}
+    >
       <nav className="p-4 space-y-6">
         {navigation.map((section) => (
           <div key={section.title}>

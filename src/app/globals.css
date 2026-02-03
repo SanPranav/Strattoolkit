@@ -216,14 +216,14 @@
     display: none;
   }
 
-  /* Snap scrolling */
+  /* Snap scrolling - use proximity so it doesn't force snap every time */
   .snap-scroll {
-    scroll-snap-type: y mandatory;
+    scroll-snap-type: y proximity;
   }
 
   .snap-section {
     scroll-snap-align: start;
-    scroll-snap-stop: always;
+    scroll-snap-stop: normal;
   }
 
   .snap-horizontal {

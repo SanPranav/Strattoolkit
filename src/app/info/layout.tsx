@@ -1,6 +1,6 @@
 import React from "react";
 import { NavbarServerConfig } from "@/components/NavbarServerConfig";
-import { InfoSidebar } from "@/components/info/InfoSidebar";
+import { InfoLayoutClient } from "@/components/info/InfoLayoutClient";
 
 export const metadata = {
   title: "Info",
@@ -11,19 +11,13 @@ export default function InfoLayout({ children }: { children: React.ReactNode }) 
     <div className="min-h-screen bg-background">
       <NavbarServerConfig />
 
-      <div className="flex">
-        <aside className="w-64 shrink-0 hidden md:block">
-          <div className="h-full border-r border-border pr-4">
-            <InfoSidebar />
-          </div>
-        </aside>
-
-        <div className="flex-1 px-6 py-8">
-          <div className="max-w-5xl">
+      <InfoLayoutClient>
+        <div className="px-4 sm:px-6 py-6 sm:py-8">
+          <div className="max-w-5xl w-full">
             {children}
           </div>
         </div>
-      </div>
+      </InfoLayoutClient>
     </div>
   );
 }

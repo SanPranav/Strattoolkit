@@ -29,8 +29,14 @@ export function HorizontalScrollSection({
     let isScrolling = false;
     let scrollTimeout: NodeJS.Timeout;
 
+    // Only tie vertical scroll to horizontal on desktop (non-touch); on phone let user swipe
+    const isTouchOrNarrow = () => {
+      if (typeof window === "undefined") return true;
+      return window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+    };
+
     const handleVerticalScroll = () => {
-      if (isScrolling) return;
+      if (isScrolling || isTouchOrNarrow()) return;
       
       const containerRect = container.getBoundingClientRect();
       const windowHeight = window.innerHeight;

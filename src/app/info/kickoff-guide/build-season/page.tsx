@@ -1,18 +1,10 @@
-import { NavbarServerConfig } from "@/components/NavbarServerConfig";
-import { InfoSidebar } from "@/components/info/InfoSidebar";
 import { Wrench, Rocket, Users, ExternalLink, Clock, Target } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function BuildSeasonPage() {
     return (
-        <div className="min-h-screen bg-background">
-            <NavbarServerConfig />
-
-            <div className="flex">
-                <InfoSidebar />
-                
-                <main className="flex-1 ml-64">
+        <>
                     {/* Header */}
                     <section className="border-b border-border">
                         <div className="container mx-auto px-8 py-16 max-w-4xl">
@@ -306,8 +298,6 @@ export default function BuildSeasonPage() {
                             </div>
                         </section>
                     </div>
-                </main>
-            </div>
-        </div>
+        </>
     );
 }

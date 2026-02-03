@@ -1,15 +1,6 @@
-import { NavbarServerConfig } from "@/components/NavbarServerConfig";
-import { InfoSidebar } from "@/components/info/InfoSidebar";
-
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <NavbarServerConfig />
-      
-      <div className="flex">
-        <InfoSidebar />
-        
-        <main className="flex-1 ml-64">
+    <>
           <section className="border-b border-border">
             <div className="container mx-auto px-8 py-16 max-w-4xl">
               <div className="mb-4">
@@ -30,8 +21,6 @@ export default function PrivacyPolicyPage() {
               <p>yeah no</p>
             </div>
           </section>
-        </main>
-      </div>
-    </div>
+        </>
   );
 }

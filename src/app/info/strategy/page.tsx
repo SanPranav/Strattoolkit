@@ -1,17 +1,9 @@
-import { NavbarServerConfig } from "@/components/NavbarServerConfig";
-import { InfoSidebar } from "@/components/info/InfoSidebar";
 import { BookOpen, Trophy, Cpu, Database, Shield, Globe } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function StrategyGuidePage() {
     return (
-        <div className="min-h-screen bg-background">
-            <NavbarServerConfig />
-
-            <div className="flex">
-                <InfoSidebar />
-                
-                <main className="flex-1 ml-64">
+        <>
                     {/* Header */}
                     <section className="border-b border-border">
                         <div className="container mx-auto px-8 py-16 max-w-4xl">
@@ -180,8 +172,6 @@ export default function StrategyGuidePage() {
                         </div>
 
                     </div>
-                </main>
-            </div>
-        </div>
+        </>
     );
 }
