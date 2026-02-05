@@ -17,7 +17,7 @@ import {
   Menu,
   SearchCode,
   LogOut,
-  BookOpen
+  BookOpen,
   Hammer
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -356,11 +356,15 @@ function DesktopNavbar({
                   </span>
                 </Button>
               ))}
+          </nav>
+        </div>
+      </div>
 
-      className={`fixed top-2 left-1/2 z-50 w-max -translate-x-1/2 transform transition-all duration-300 ease-in-out ${
-        isVisible ? "translate-y-0" : "-translate-y-full"
-      }`}>
-      <div className="rounded-2xl border border-border bg-card/85 px-6 py-3 shadow-2xl backdrop-blur-xl">
+      <div
+        className={`fixed top-2 left-1/2 z-50 w-max -translate-x-1/2 transform transition-all duration-300 ease-in-out ${
+          isVisible ? "translate-y-0" : "-translate-y-full"
+        }`}>
+        <div className="rounded-2xl border border-border bg-card/85 px-6 py-3 shadow-2xl backdrop-blur-xl">
         <div className="flex items-center justify-between space-x-8">
           <nav className="flex items-center space-x-2">
             <NavList items={navItems} onSelect={onNavigate} inline />
@@ -389,6 +393,7 @@ function DesktopNavbar({
             )}
           </nav>
         </div>
+      </div>
       </div>
     </div>
   );
