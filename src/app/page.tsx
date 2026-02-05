@@ -18,11 +18,6 @@ import { DynamicBackground } from "@/components/DynamicBackground";
 import { BarChart3, ClipboardList, Users, Code2, Zap, Shield, Rocket, Target, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const metadata = {
-  title: "Optix Toolkit | Team Optix 3749",
-  description: "Streamlining FRC Operations for Team Optix 3749."
-};
-
 export default function Home() {
   const sectionsRef = useRef<{ [key: string]: HTMLElement | null }>({});
 
@@ -305,6 +300,7 @@ export default function Home() {
             className="min-w-[150px] text-lg h-12">
             <Link href="/scouting">Scouting</Link>
           </Button>
+        </div>
         </div>
       </section>
 

@@ -42,7 +42,7 @@ export function InfoLayoutClient({ children }: { children: React.ReactNode }) {
 
       {/* Mobile info menu button - only on small screens, on every info page (show when not desktop, including before hydration) */}
       {isDesktop !== true && (
-        <div className="fixed top-[3.5rem] left-4 z-40">
+        <div className="fixed top-20 left-4 z-40">
           <Button
             variant="outline"
             size="icon"
@@ -72,7 +72,7 @@ export function InfoLayoutClient({ children }: { children: React.ReactNode }) {
       <div
         className={cn(
           "flex-1 min-w-0",
-          isDesktop !== true && "pt-14 pl-14",
+          isDesktop !== true && "pt-20 pl-14",
           isDesktop === true && "pt-0 pl-0"
         )}
       >

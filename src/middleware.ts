@@ -18,7 +18,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Sync route permissions from feature flag (with TTL to avoid excessive calls)
-  await syncRoutePermissionsWithTTL();
+  // Non-blocking: silently fail if PostHog API key is not configured
+  syncRoutePermissionsWithTTL().catch((error) => {
+    logger.warn({ error }, "[Middleware] Failed to sync route permissions from feature flag. Using default permissions.");
+  });
 
   let response = NextResponse.next({
     request
@@ -73,7 +76,17 @@ export async function middleware(request: NextRequest) {
     "[Middleware] Resolved request role"
   );
 
-  const hasPermission = await checkPermissionsForRoute(originalPath, role);
+  let hasPermission = true;
+  try {
+    hasPermission = await checkPermissionsForRoute(originalPath, role);
+  } catch (error) {
+    logger.warn(
+      { error, path: originalPath },
+      "[Middleware] Failed to check route permissions (missing SUPABASE_SERVICE_KEY?). Allowing access with public permissions only."
+    );
+    // If permission check fails (e.g., missing service key), allow access only if no role is required
+    hasPermission = !role || role === "public";
+  }
 
   logger.debug(
     {

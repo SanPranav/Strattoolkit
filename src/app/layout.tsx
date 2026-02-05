@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={"dark"}>
+      <body className={"dark"} suppressHydrationWarning>
         <QueryProvider>
           <main className={`w-full ${geistSans.className} antialiased`}>
             <Navbar />

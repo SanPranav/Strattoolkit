@@ -32,8 +32,6 @@ import {
 } from "@/components/ui/drawer";
 
 import { Separator } from "@/components/ui/separator";
-import NavigationMenuDemo from "@/components/NavigationMenuDemo";
-import type { FullUserData, User } from "@/lib/types/db";
 import type { FullUserData } from "@/lib/types/db";
 import { getProfileImageUrl } from "@/lib/supabase/supabase";
 
@@ -175,27 +173,21 @@ function MobileNavbar({
   setExpanded
 }: SharedProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const pendingNavigation = useRef<NavigateArgs | null>(null);
 
   useEffect(() => {
     setExpanded(true);
   }, [setExpanded]);
 
   const handleNavigation = (item: NavigateArgs) => {
-    pendingNavigation.current = item;
     setIsOpen(false);
+    // Small delay to let the drawer animation complete
+    setTimeout(() => {
+      onNavigate(item);
+    }, 120);
   };
 
   const handleDrawerClose = (open: boolean) => {
     setIsOpen(open);
-    if (!open && pendingNavigation.current) {
-      // Small delay to let the drawer animation complete
-      const nav = pendingNavigation.current;
-      pendingNavigation.current = null;
-      setTimeout(() => {
-        onNavigate(nav);
-      }, 100);
-    }
   };
 
   return (
@@ -274,7 +266,8 @@ function DesktopNavbar({
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      const deadband = 12;
+      const deadband = 28;
+      const topRevealZone = 32;
       const currentScrollY = window.scrollY;
       const rect = navbarRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -282,10 +275,12 @@ function DesktopNavbar({
       const withinBounds =
         e.clientY > rect.top - deadband &&
         e.clientY < rect.bottom + deadband &&
-        e.clientX > rect.left &&
-        e.clientX < rect.right;
+        e.clientX > rect.left - deadband &&
+        e.clientX < rect.right + deadband;
 
-      if (withinBounds) {
+      const withinTopZone = e.clientY <= topRevealZone;
+
+      if (withinBounds || withinTopZone) {
         setIsVisible(true);
       } else if (currentScrollY >= 100 || !defaultExpanded) {
         setIsVisible(false);
